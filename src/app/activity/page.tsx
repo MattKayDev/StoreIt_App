@@ -8,7 +8,6 @@ import {
   LayoutDashboard,
   Package2,
   Settings,
-  BarChart3,
   MapPin,
   History,
   Menu,

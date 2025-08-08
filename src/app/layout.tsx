@@ -1,3 +1,4 @@
+
 import type {Metadata} from 'next';
 import './globals.css';
 import { cn } from '@/lib/utils';
@@ -5,7 +6,7 @@ import { Toaster } from "@/components/ui/toaster"
 import { ThemeProvider } from '@/components/theme-provider';
 
 export const metadata: Metadata = {
-  title: 'StoreIt App',
+  title: 'InvenTrack',
   description: 'Your smart inventory solution.',
 };
 

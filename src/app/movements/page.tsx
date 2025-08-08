@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -7,7 +8,6 @@ import {
   LayoutDashboard,
   Package2,
   Settings,
-  BarChart3,
   MapPin,
   History,
   Menu,
@@ -148,7 +148,7 @@ export default function ActivityPage() {
           <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
             <Link href="/" className="flex items-center gap-2 font-semibold">
               <Package2 className="h-6 w-6 text-primary" />
-              <span className="">StoreIt App</span>
+              <span className="">InvenTrack</span>
             </Link>
           </div>
           <div className="flex-1">
@@ -175,15 +175,8 @@ export default function ActivityPage() {
                 Activity Log
               </Link>
               <Link
-                href="#"
-                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hidden"
-              >
-                <BarChart3 className="h-4 w-4" />
-                Reports
-              </Link>
-              <Link
-                href="#"
-                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hidden"
+                href="/settings"
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
               >
                 <Settings className="h-4 w-4" />
                 Settings
@@ -215,7 +208,7 @@ export default function ActivityPage() {
                   className="flex items-center gap-2 text-lg font-semibold"
                 >
                   <Package2 className="h-6 w-6 text-primary" />
-                  <span className="sr-only">StoreIt App</span>
+                  <span className="sr-only">InvenTrack</span>
                 </Link>
                 <Link
                   href="/"
@@ -237,6 +230,13 @@ export default function ActivityPage() {
                 >
                   <History className="h-5 w-5" />
                   Activity Log
+                </Link>
+                 <Link
+                  href="/settings"
+                  className="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground"
+                >
+                  <Settings className="h-5 w-5" />
+                  Settings
                 </Link>
               </nav>
             </SheetContent>
