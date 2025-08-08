@@ -548,6 +548,10 @@ function ItemDialogContent({
       }
     }
   };
+
+  const handleRemoveImage = () => {
+    setImageUrl(null);
+  }
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -606,14 +610,19 @@ function ItemDialogContent({
                     {imageUrl && <Image src={imageUrl} alt="Item image" width={100} height={100} className="rounded-md object-cover" />}
                     
                     <div className="flex gap-2">
-                         <Button type="button" variant="outline" onClick={() => document.getElementById('file-upload')?.click()}>
+                         <Button type="button" variant="outline" size="sm" onClick={() => document.getElementById('file-upload')?.click()}>
                             <Upload className="mr-2 h-4 w-4" /> Upload
                         </Button>
                         <input type="file" id="file-upload" accept="image/*" onChange={handleFileChange} className="hidden" />
 
-                        <Button type="button" variant="outline" onClick={() => setCameraMode(true)}>
+                        <Button type="button" variant="outline" size="sm" onClick={() => setCameraMode(true)}>
                             <Camera className="mr-2 h-4 w-4" /> Camera
                         </Button>
+                        {imageUrl && (
+                             <Button type="button" variant="destructive" size="sm" onClick={handleRemoveImage}>
+                                <Trash2 className="mr-2 h-4 w-4" /> Remove
+                            </Button>
+                        )}
                     </div>
                  </div>
             </div>
@@ -704,7 +713,3 @@ function MoveItemDialogContent({ item, onMove, locations }: { item: Item | null,
         </DialogContent>
     );
 }
-
-    
-
-    
