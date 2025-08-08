@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -18,6 +18,8 @@ import {
   MapPin,
   Trash2,
   FilePenLine,
+  Upload,
+  Camera
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -69,6 +71,7 @@ import type { Item, Movement, Location } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { logOut } from '@/lib/firebase/auth';
 import { getItems, getLocations, getMovements, createItem, createMovement, updateItem, deleteItem } from '@/lib/firebase/database';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 
 export default function Dashboard() {
@@ -470,7 +473,11 @@ function ItemDialogContent({
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [isCameraMode, setCameraMode] = useState(false);
+  const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const isEditMode = !!item;
 
@@ -479,14 +486,68 @@ function ItemDialogContent({
       setName(item.name);
       setDescription(item.description);
       setLocation(item.location);
-      setImageUrl(item.imageUrl || '');
+      setImageUrl(item.imageUrl || null);
     } else {
         setName('');
         setDescription('');
         setLocation('');
-        setImageUrl('');
+        setImageUrl(null);
     }
   }, [item]);
+
+   useEffect(() => {
+    if (isCameraMode) {
+      const getCameraPermission = async () => {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+          setHasCameraPermission(true);
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+          }
+        } catch (error) {
+          console.error('Error accessing camera:', error);
+          setHasCameraPermission(false);
+          toast({
+            variant: 'destructive',
+            title: 'Camera Access Denied',
+            description: 'Please enable camera permissions in your browser settings.',
+          });
+        }
+      };
+      getCameraPermission();
+    } else {
+      if (videoRef.current && videoRef.current.srcObject) {
+        (videoRef.current.srcObject as MediaStream).getTracks().forEach(track => track.stop());
+      }
+    }
+  }, [isCameraMode, toast]);
+  
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImageUrl(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleCapture = () => {
+    if (videoRef.current && canvasRef.current) {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const context = canvas.getContext('2d');
+      if (context) {
+        context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
+        const dataUrl = canvas.toDataURL('image/png');
+        setImageUrl(dataUrl);
+        setCameraMode(false);
+      }
+    }
+  };
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -499,7 +560,7 @@ function ItemDialogContent({
       return;
     }
 
-    const itemData = { name, description, location, imageUrl };
+    const itemData = { name, description, location, imageUrl: imageUrl || '' };
 
     if (isEditMode && onEdit) {
         onEdit(itemData);
@@ -527,10 +588,6 @@ function ItemDialogContent({
             <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} className="col-span-3" />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="imageUrl" className="text-right">Image URL</Label>
-            <Input id="imageUrl" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} className="col-span-3" placeholder="https://example.com/image.png" />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="location" className="text-right">Location</Label>
             <Select onValueChange={setLocation} value={location}>
                 <SelectTrigger className="col-span-3">
@@ -543,11 +600,51 @@ function ItemDialogContent({
                 </SelectContent>
             </Select>
           </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+                 <Label className="text-right">Image</Label>
+                 <div className="col-span-3 flex flex-col gap-2">
+                    {imageUrl && <Image src={imageUrl} alt="Item image" width={100} height={100} className="rounded-md object-cover" />}
+                    
+                    <div className="flex gap-2">
+                         <Button type="button" variant="outline" onClick={() => document.getElementById('file-upload')?.click()}>
+                            <Upload className="mr-2 h-4 w-4" /> Upload
+                        </Button>
+                        <input type="file" id="file-upload" accept="image/*" onChange={handleFileChange} className="hidden" />
+
+                        <Button type="button" variant="outline" onClick={() => setCameraMode(true)}>
+                            <Camera className="mr-2 h-4 w-4" /> Camera
+                        </Button>
+                    </div>
+                 </div>
+            </div>
+
         </div>
         <DialogFooter>
           <Button type="submit">{isEditMode ? "Save Changes" : "Create Item"}</Button>
         </DialogFooter>
       </form>
+      <Dialog open={isCameraMode} onOpenChange={setCameraMode}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Take a picture</DialogTitle>
+            </DialogHeader>
+            <div className="flex flex-col gap-4">
+                <video ref={videoRef} className="w-full aspect-video rounded-md bg-muted" autoPlay muted />
+                {hasCameraPermission === false && (
+                    <Alert variant="destructive">
+                        <AlertTitle>Camera Access Required</AlertTitle>
+                        <AlertDescription>
+                            Please allow camera access to use this feature.
+                        </AlertDescription>
+                    </Alert>
+                )}
+                <canvas ref={canvasRef} className="hidden" />
+            </div>
+            <DialogFooter>
+                <Button onClick={handleCapture} disabled={!hasCameraPermission}>Take Photo</Button>
+            </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DialogContent>
   );
 }
@@ -607,5 +704,7 @@ function MoveItemDialogContent({ item, onMove, locations }: { item: Item | null,
         </DialogContent>
     );
 }
+
+    
 
     
