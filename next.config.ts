@@ -4,7 +4,6 @@ require('dotenv').config({ path: './.env.local' });
 
 const nextConfig: NextConfig = {
   /* config options here */
-  trailingSlash: true,
   typescript: {
     ignoreBuildErrors: true,
   },
