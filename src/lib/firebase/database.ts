@@ -68,37 +68,24 @@ export async function getItems(): Promise<Item[]> {
 
     const ownedItemsQuery = query(ref(db, 'items'), orderByChild('ownerId'), equalTo(currentUser.uid));
     const ownedItemsSnapshot = await get(ownedItemsQuery);
-    let items = ownedItemsSnapshot.exists() ? Object.values(ownedItemsSnapshot.val()) as Item[] : [];
+    let items: Item[] = [];
+    if (ownedItemsSnapshot.exists()) {
+        const ownedItemsData = ownedItemsSnapshot.val();
+        items = Object.keys(ownedItemsData).map(key => ({ ...ownedItemsData[key], id: key }));
+    }
 
     const sharedWithUserIds = await getSharedWithMeIds();
     for (const ownerId of sharedWithUserIds) {
         const sharedItemsQuery = query(ref(db, 'items'), orderByChild('ownerId'), equalTo(ownerId));
         const sharedItemsSnapshot = await get(sharedItemsQuery);
         if (sharedItemsSnapshot.exists()) {
-            items = [...items, ...Object.values(sharedItemsSnapshot.val()) as Item[]];
+            const sharedItemsData = sharedItemsSnapshot.val();
+            const sharedItems = Object.keys(sharedItemsData).map(key => ({ ...sharedItemsData[key], id: key }));
+            items = [...items, ...sharedItems];
         }
     }
-    // Add id to each item
-    const allItems = items.map(item => {
-        const key = Object.keys(ownedItemsSnapshot.val() || {}).find(k => (ownedItemsSnapshot.val()[k] as Item).name === item.name) || 
-                    Object.keys(items.find(i => i.name === item.name) || {} as any);
-        return {...item, id: (item as any).id || key }
-    });
     
-    // a bit of a hack to get the ids right.
-    const finalItems : Item[] = [];
-    const fullSnapshot = await get(ref(db, 'items'));
-    if(fullSnapshot.exists()){
-      const allDbItems = fullSnapshot.val();
-      items.forEach(item => {
-        const dbKey = Object.keys(allDbItems).find(key => allDbItems[key].name === item.name && allDbItems[key].ownerId === item.ownerId);
-        if(dbKey) {
-            finalItems.push({...item, id: dbKey});
-        }
-      });
-    }
-
-    return finalItems;
+    return items;
 };
 
 export async function createItem(itemData: Omit<Item, 'id'|'ownerId'>) {
@@ -108,9 +95,9 @@ export async function createItem(itemData: Omit<Item, 'id'|'ownerId'>) {
 
     const itemWithOwner = {...itemData, ownerId: currentUser.uid};
     const newItemRef = push(ref(db, 'items'));
-    await set(newItemRef, { ...itemWithOwner, id: newItemRef.key });
+    await set(newItemRef, { ...itemWithOwner });
     
-    const newItem = { ...itemWithOwner, id: newItemRef.key };
+    const newItem = { ...itemWithOwner, id: newItemRef.key! };
 
     await createLogEntry({
         itemId: newItem.id,
@@ -205,31 +192,24 @@ export async function getLocations(): Promise<Location[]> {
 
     const ownedQuery = query(ref(db, 'locations'), orderByChild('ownerId'), equalTo(currentUser.uid));
     const ownedSnapshot = await get(ownedQuery);
-    let locations = ownedSnapshot.exists() ? Object.values(ownedSnapshot.val()) as Location[] : [];
+    let locations: Location[] = [];
+    if(ownedSnapshot.exists()){
+        const ownedData = ownedSnapshot.val();
+        locations = Object.keys(ownedData).map(key => ({...ownedData[key], id: key}));
+    }
     
     const sharedWithUserIds = await getSharedWithMeIds();
     for (const ownerId of sharedWithUserIds) {
         const sharedQuery = query(ref(db, 'locations'), orderByChild('ownerId'), equalTo(ownerId));
         const sharedSnapshot = await get(sharedQuery);
         if (sharedSnapshot.exists()) {
-            locations = [...locations, ...Object.values(sharedSnapshot.val()) as Location[]];
+             const sharedData = sharedSnapshot.val();
+            const sharedLocations = Object.keys(sharedData).map(key => ({...sharedData[key], id: key}));
+            locations = [...locations, ...sharedLocations];
         }
     }
     
-    // a bit of a hack to get the ids right.
-    const finalLocations : Location[] = [];
-    const fullSnapshot = await get(ref(db, 'locations'));
-    if(fullSnapshot.exists()){
-      const allDbItems = fullSnapshot.val();
-      locations.forEach(loc => {
-        const dbKey = Object.keys(allDbItems).find(key => allDbItems[key].name === loc.name && allDbItems[key].ownerId === loc.ownerId);
-        if(dbKey) {
-            finalLocations.push({...loc, id: dbKey});
-        }
-      });
-    }
-
-    return finalLocations;
+    return locations;
 };
 
 export async function createLocation(locationData: Omit<Location, 'id' | 'ownerId'>) {
@@ -290,31 +270,24 @@ export async function getActivityLog(): Promise<LogEntry[]> {
 
     const ownedQuery = query(ref(db, 'activity'), orderByChild('ownerId'), equalTo(currentUser.uid));
     const ownedSnapshot = await get(ownedQuery);
-    let logs = ownedSnapshot.exists() ? Object.values(ownedSnapshot.val()) as LogEntry[] : [];
+    let logs: LogEntry[] = [];
+    if(ownedSnapshot.exists()){
+        const ownedData = ownedSnapshot.val();
+        logs = Object.keys(ownedData).map(key => ({...ownedData[key], id: key}));
+    }
     
     const sharedWithUserIds = await getSharedWithMeIds();
     for (const ownerId of sharedWithUserIds) {
         const sharedQuery = query(ref(db, 'activity'), orderByChild('ownerId'), equalTo(ownerId));
         const sharedSnapshot = await get(sharedQuery);
         if (sharedSnapshot.exists()) {
-            logs = [...logs, ...Object.values(sharedSnapshot.val()) as LogEntry[]];
+             const sharedData = sharedSnapshot.val();
+            const sharedLogs = Object.keys(sharedData).map(key => ({...sharedData[key], id: key}));
+            logs = [...logs, ...sharedLogs];
         }
     }
 
-    // a bit of a hack to get the ids right.
-    const finalLogs : LogEntry[] = [];
-    const fullSnapshot = await get(ref(db, 'activity'));
-    if(fullSnapshot.exists()){
-      const allDbItems = fullSnapshot.val();
-      logs.forEach(log => {
-        const dbKey = Object.keys(allDbItems).find(key => allDbItems[key].itemId === log.itemId && allDbItems[key].loggedAt === log.loggedAt);
-        if(dbKey) {
-            finalLogs.push({...log, id: dbKey});
-        }
-      });
-    }
-
-    return finalLogs;
+    return logs;
 };
 
 export async function createMovement(movementData: {itemId: string, itemName: string, fromLocation: string, toLocation: string}) {
