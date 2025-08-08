@@ -170,21 +170,21 @@ export default function Dashboard() {
               </Link>
               <Link
                 href="#"
-                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hidden"
               >
                 <BarChart3 className="h-4 w-4" />
                 Reports
               </Link>
               <Link
                 href="#"
-                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hidden"
               >
                 <Settings className="h-4 w-4" />
                 Settings
               </Link>
             </nav>
           </div>
-          <div className="mt-auto p-4">
+          <div className="mt-auto p-4 hidden">
             <Card>
               <CardHeader className="p-2 pt-0 md:p-4">
                 <CardTitle>Need Help?</CardTitle>
@@ -478,5 +478,7 @@ function MoveItemDialogContent({ item, onMove, locations }: { item: Item | null,
         </DialogContent>
     );
 }
+
+    
 
     
