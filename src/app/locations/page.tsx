@@ -11,13 +11,15 @@ import {
   PlusCircle,
   Search,
   Settings,
-  BarChart3,
   MapPin,
   Trash2,
   FilePenLine,
   History,
   Menu,
+  Moon,
+  Sun,
 } from 'lucide-react';
+import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -33,6 +35,10 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuPortal
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import {
@@ -81,6 +87,8 @@ export default function LocationsPage() {
 
   const { toast } = useToast();
   const [user, setUser] = useState<any>(null);
+  const { setTheme } = useTheme();
+
 
    useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -100,8 +108,10 @@ export default function LocationsPage() {
 
   useEffect(() => {
     setIsMounted(true);
-    fetchLocations();
-  }, []);
+    if (user) {
+      fetchLocations();
+    }
+  }, [user]);
 
   const handleLogout = async () => {
     const { error } = await logOut();
@@ -140,7 +150,7 @@ export default function LocationsPage() {
   
   const handleEditLocation = async (name: string) => {
     if (!selectedLocation) return;
-    const updatedLocationData = { ...selectedLocation, name };
+    const updatedLocationData = { name };
     const success = await updateLocation(selectedLocation.id, updatedLocationData);
     if(success) {
         setLocations(prev => prev.map(loc => loc.id === selectedLocation.id ? {...loc, name} : loc));
@@ -153,7 +163,7 @@ export default function LocationsPage() {
     } else {
         toast({
             title: 'Error',
-            description: 'Failed to update location.',
+            description: 'Failed to update location. You may not be the owner.',
             variant: 'destructive'
         });
     }
@@ -170,7 +180,7 @@ export default function LocationsPage() {
     } else {
         toast({
           title: 'Error',
-          description: 'Failed to delete location.',
+          description: 'Failed to delete location. You may not be the owner.',
           variant: 'destructive'
         });
     }
@@ -216,22 +226,15 @@ export default function LocationsPage() {
                 Locations
               </Link>
               <Link
-                href="/movements"
+                href="/activity"
                 className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
               >
                 <History className="h-4 w-4" />
-                Movement Log
+                Activity Log
               </Link>
               <Link
-                href="#"
-                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hidden"
-              >
-                <BarChart3 className="h-4 w-4" />
-                Reports
-              </Link>
-              <Link
-                href="#"
-                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hidden"
+                href="/settings"
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
               >
                 <Settings className="h-4 w-4" />
                 Settings
@@ -280,11 +283,18 @@ export default function LocationsPage() {
                   Locations
                 </Link>
                 <Link
-                  href="/movements"
+                  href="/activity"
                   className="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground"
                 >
                   <History className="h-5 w-5" />
-                  Movement Log
+                  Activity Log
+                </Link>
+                <Link
+                  href="/settings"
+                  className="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground"
+                >
+                  <Settings className="h-5 w-5" />
+                  Settings
                 </Link>
               </nav>
             </SheetContent>
@@ -326,6 +336,16 @@ export default function LocationsPage() {
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem onSelect={() => router.push('/settings')}>Settings</DropdownMenuItem>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>Theme</DropdownMenuSubTrigger>
+                <DropdownMenuPortal>
+                    <DropdownMenuSubContent>
+                        <DropdownMenuItem onSelect={() => setTheme('light')}>Light</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => setTheme('dark')}>Dark</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => setTheme('system')}>System</DropdownMenuItem>
+                    </DropdownMenuSubContent>
+                </DropdownMenuPortal>
+              </DropdownMenuSub>
               <DropdownMenuSeparator />
               <DropdownMenuItem onSelect={handleLogout}>Logout</DropdownMenuItem>
             </DropdownMenuContent>
@@ -336,7 +356,7 @@ export default function LocationsPage() {
             <CardHeader>
               <CardTitle>Locations</CardTitle>
               <CardDescription>
-                Manage your inventory locations.
+                Manage your inventory locations. Shared locations are read-only.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -344,6 +364,7 @@ export default function LocationsPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Name</TableHead>
+                    <TableHead>Owner</TableHead>
                     <TableHead>
                       <span className="sr-only">Actions</span>
                     </TableHead>
@@ -353,29 +374,32 @@ export default function LocationsPage() {
                   {filteredLocations.map(location => (
                     <TableRow key={location.id}>
                       <TableCell className="font-medium">{location.name}</TableCell>
+                      <TableCell>{location.ownerId === user.uid ? 'You' : 'Shared'}</TableCell>
                       <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button aria-haspopup="true" size="icon" variant="ghost">
-                              <MoreHorizontal className="h-4 w-4" />
-                              <span className="sr-only">Toggle menu</span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem
-                                onSelect={() => {
-                                    setSelectedLocation(location);
-                                    setEditLocationOpen(true);
-                                }}
-                            >
-                                <FilePenLine className="mr-2 h-4 w-4" /> Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onSelect={() => handleDeleteLocation(location.id)} className="text-destructive">
-                                <Trash2 className="mr-2 h-4 w-4" /> Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        {location.ownerId === user.uid && (
+                            <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button aria-haspopup="true" size="icon" variant="ghost">
+                                <MoreHorizontal className="h-4 w-4" />
+                                <span className="sr-only">Toggle menu</span>
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                <DropdownMenuItem
+                                    onSelect={() => {
+                                        setSelectedLocation(location);
+                                        setEditLocationOpen(true);
+                                    }}
+                                >
+                                    <FilePenLine className="mr-2 h-4 w-4" /> Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onSelect={() => handleDeleteLocation(location.id)} className="text-destructive">
+                                    <Trash2 className="mr-2 h-4 w-4" /> Delete
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                            </DropdownMenu>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -473,6 +497,3 @@ function EditLocationDialogContent({ location, onEdit }: { location: Location | 
         </DialogContent>
     )
 }
-
-    
-    

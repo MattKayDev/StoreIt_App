@@ -4,19 +4,35 @@ export interface Item {
   description: string;
   location: string;
   imageUrl?: string;
+  ownerId: string;
 }
 
-export interface Movement {
+export type LogAction = 'Created' | 'Updated' | 'Moved' | 'Deleted';
+
+export interface LogEntry {
   id: string;
   itemId: string;
   itemName: string;
-  fromLocation: string;
-  toLocation: string;
-  movedBy: string;
-  movedAt: string; // Stored as ISO string in DB
+  action: LogAction;
+  fromLocation?: string;
+  toLocation?: string;
+  details?: string;
+  loggedBy: string;
+  loggedAt: string; // Stored as ISO string in DB
+  ownerId: string;
 }
 
+
 export interface Location {
+  id: string;
+  name:string;
+  ownerId: string;
+}
+
+export interface Share {
     id: string;
-    name: string;
+    sharerId: string;
+    sharerEmail: string;
+    shareeEmail: string;
+    status: 'pending' | 'accepted';
 }

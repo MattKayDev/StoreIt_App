@@ -148,7 +148,7 @@ export default function ActivityPage() {
           <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
             <Link href="/" className="flex items-center gap-2 font-semibold">
               <Package2 className="h-6 w-6 text-primary" />
-              <span className="">StoreIt App</span>
+              <span className="">InvenTrack</span>
             </Link>
           </div>
           <div className="flex-1">
@@ -208,7 +208,7 @@ export default function ActivityPage() {
                   className="flex items-center gap-2 text-lg font-semibold"
                 >
                   <Package2 className="h-6 w-6 text-primary" />
-                  <span className="sr-only">StoreIt App</span>
+                  <span className="sr-only">InvenTrack</span>
                 </Link>
                 <Link
                   href="/"
@@ -280,7 +280,7 @@ export default function ActivityPage() {
             <CardHeader>
                 <CardTitle>Activity Log</CardTitle>
                 <CardDescription>
-                  A log of all item creations, updates, movements, and deletions.
+                  A log of all item creations, updates, movements, and deletions for your items and items shared with you.
                 </CardDescription>
             </CardHeader>
             <CardContent>

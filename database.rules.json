@@ -1,0 +1,21 @@
+{
+  "rules": {
+    ".read": "now < 1757199600000",
+    ".write": "now < 1757199600000",
+    "users": {
+      ".indexOn": "email"
+    },
+    "items": {
+      ".indexOn": "ownerId"
+    },
+    "locations": {
+      ".indexOn": "ownerId"
+    },
+    "activity": {
+      ".indexOn": "ownerId"
+    },
+    "shares": {
+      ".indexOn": ["sharerId", "shareeEmail"]
+    }
+  }
+}

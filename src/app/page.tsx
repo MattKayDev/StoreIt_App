@@ -14,7 +14,6 @@ import {
   Search,
   Settings,
   Warehouse,
-  BarChart3,
   MapPin,
   Trash2,
   FilePenLine,
@@ -22,7 +21,11 @@ import {
   Camera,
   History,
   Menu,
+  Moon,
+  Sun,
+  Share2,
 } from 'lucide-react';
+import { useTheme } from 'next-themes';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -40,6 +43,10 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuPortal,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import {
@@ -75,7 +82,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import type { Item, Movement, Location } from '@/lib/types';
+import type { Item, Location } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { logOut } from '@/lib/firebase/auth';
 import { auth } from '@/lib/firebase/config';
@@ -99,6 +106,8 @@ export default function Dashboard() {
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
 
   const { toast } = useToast();
+  const { setTheme } = useTheme();
+
 
    useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -122,8 +131,10 @@ export default function Dashboard() {
 
   useEffect(() => {
     setIsMounted(true);
-    fetchData();
-  }, []);
+    if (user) {
+      fetchData();
+    }
+  }, [user]);
 
   const handleLogout = async () => {
     const { error } = await logOut();
@@ -148,7 +159,7 @@ export default function Dashboard() {
     );
   }, [items, searchQuery]);
 
-  const handleCreateItem = async (newItemData: Omit<Item, 'id'>) => {
+  const handleCreateItem = async (newItemData: Omit<Item, 'id' | 'ownerId'>) => {
     const tempItem = await createItem(newItemData);
 
     if(!tempItem) {
@@ -168,7 +179,7 @@ export default function Dashboard() {
     setCreateItemOpen(false);
   };
 
-  const handleEditItem = async (itemData: Partial<Omit<Item, 'id'>>) => {
+  const handleEditItem = async (itemData: Partial<Omit<Item, 'id' | 'ownerId'>>) => {
     if (!selectedItem) return;
 
     const success = await updateItem(selectedItem.id, itemData);
@@ -183,7 +194,7 @@ export default function Dashboard() {
     } else {
       toast({
         title: 'Error',
-        description: 'Failed to update item.',
+        description: 'Failed to update item. You may not be the owner.',
         variant: 'destructive',
       });
     }
@@ -200,7 +211,7 @@ export default function Dashboard() {
     } else {
       toast({
         title: 'Error',
-        description: 'Failed to delete item.',
+        description: 'Failed to delete item. You may not be the owner.',
         variant: 'destructive',
       });
     }
@@ -228,7 +239,7 @@ export default function Dashboard() {
     } else {
          toast({
             title: 'Error',
-            description: 'Failed to move item.',
+            description: 'Failed to move item. You may not be the owner.',
             variant: 'destructive'
         })
     }
@@ -274,22 +285,15 @@ export default function Dashboard() {
                 Locations
               </Link>
               <Link
-                href="/movements"
+                href="/activity"
                 className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
               >
                 <History className="h-4 w-4" />
-                Movement Log
+                Activity Log
               </Link>
               <Link
-                href="#"
-                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hidden"
-              >
-                <BarChart3 className="h-4 w-4" />
-                Reports
-              </Link>
-              <Link
-                href="#"
-                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hidden"
+                href="/settings"
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
               >
                 <Settings className="h-4 w-4" />
                 Settings
@@ -338,11 +342,18 @@ export default function Dashboard() {
                   Locations
                 </Link>
                 <Link
-                  href="/movements"
+                  href="/activity"
                   className="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground"
                 >
                   <History className="h-5 w-5" />
-                  Movement Log
+                  Activity Log
+                </Link>
+                 <Link
+                  href="/settings"
+                  className="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground"
+                >
+                  <Settings className="h-5 w-5" />
+                  Settings
                 </Link>
               </nav>
             </SheetContent>
@@ -370,7 +381,7 @@ export default function Dashboard() {
             </DialogTrigger>
             <ItemDialogContent 
                 onCreate={handleCreateItem} 
-                locations={locations} 
+                locations={locations.filter(l => l.ownerId === user.uid)} 
                 toast={toast}
             />
           </Dialog>
@@ -388,6 +399,16 @@ export default function Dashboard() {
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem onSelect={() => router.push('/settings')}>Settings</DropdownMenuItem>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>Theme</DropdownMenuSubTrigger>
+                <DropdownMenuPortal>
+                    <DropdownMenuSubContent>
+                        <DropdownMenuItem onSelect={() => setTheme('light')}>Light</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => setTheme('dark')}>Dark</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => setTheme('system')}>System</DropdownMenuItem>
+                    </DropdownMenuSubContent>
+                </DropdownMenuPortal>
+              </DropdownMenuSub>
               <DropdownMenuSeparator />
               <DropdownMenuItem onSelect={handleLogout}>Logout</DropdownMenuItem>
             </DropdownMenuContent>
@@ -399,6 +420,7 @@ export default function Dashboard() {
               <ItemCard 
                 key={item.id} 
                 item={item} 
+                isOwner={item.ownerId === user.uid}
                 onMoveClick={() => {
                   setSelectedItem(item);
                   setMoveItemOpen(true);
@@ -420,7 +442,7 @@ export default function Dashboard() {
         <ItemDialogContent 
             item={selectedItem}
             onEdit={handleEditItem} 
-            locations={locations}
+            locations={locations.filter(l => l.ownerId === user.uid)}
             toast={toast}
         />
       </Dialog>
@@ -428,7 +450,7 @@ export default function Dashboard() {
   );
 }
 
-function ItemCard({ item, onMoveClick, onEditClick, onDeleteClick }: { item: Item; onMoveClick: () => void; onEditClick: () => void; onDeleteClick: () => void; }) {
+function ItemCard({ item, isOwner, onMoveClick, onEditClick, onDeleteClick }: { item: Item; isOwner: boolean; onMoveClick: () => void; onEditClick: () => void; onDeleteClick: () => void; }) {
   const [isImageModalOpen, setImageModalOpen] = useState(false);
   
   return (
@@ -470,32 +492,35 @@ function ItemCard({ item, onMoveClick, onEditClick, onDeleteClick }: { item: Ite
                     {item.location}
                 </CardDescription>
             </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button aria-haspopup="true" size="icon" variant="ghost">
-                  <MoreHorizontal className="h-4 w-4" />
-                  <span className="sr-only">Toggle menu</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                <DropdownMenuItem onSelect={onEditClick}>
-                    <FilePenLine className="mr-2 h-4 w-4" />
-                    Edit
-                </DropdownMenuItem>
-                <DropdownMenuItem onSelect={onDeleteClick} className="text-destructive">
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Delete
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {isOwner && (
+                <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button aria-haspopup="true" size="icon" variant="ghost">
+                    <MoreHorizontal className="h-4 w-4" />
+                    <span className="sr-only">Toggle menu</span>
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                    <DropdownMenuItem onSelect={onEditClick}>
+                        <FilePenLine className="mr-2 h-4 w-4" />
+                        Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={onDeleteClick} className="text-destructive">
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+                </DropdownMenu>
+            )}
         </div>
       </CardHeader>
       <CardContent className="flex-grow">
         <p className="text-sm text-muted-foreground">{item.description}</p>
       </CardContent>
-      <CardFooter>
-        <Button className="w-full" onClick={onMoveClick}>
+      <CardFooter className="flex flex-col gap-2 items-stretch">
+        {!isOwner && <Label className="text-xs text-center text-muted-foreground">Shared Item</Label>}
+        <Button className="w-full" onClick={onMoveClick} disabled={!isOwner}>
           <ArrowRightLeft className="mr-2 h-4 w-4" /> Move Item
         </Button>
       </CardFooter>
@@ -511,8 +536,8 @@ function ItemDialogContent({
   toast,
 }: {
   item?: Item | null;
-  onCreate?: (data: Omit<Item, 'id'>) => void;
-  onEdit?: (data: Partial<Omit<Item, 'id'>>) => void;
+  onCreate?: (data: Omit<Item, 'id'| 'ownerId'>) => void;
+  onEdit?: (data: Partial<Omit<Item, 'id' | 'ownerId'>>) => void;
   locations: Location[];
   toast: (args: any) => void;
 }) {
@@ -749,7 +774,7 @@ function MoveItemDialogContent({ item, onMove, locations }: { item: Item | null,
                             <SelectValue placeholder="Select a new location" />
                         </SelectTrigger>
                         <SelectContent>
-                            {locations.filter(loc => loc.name !== item.location).map(loc => (
+                            {locations.filter(loc => loc.name !== item.location && loc.ownerId === item.ownerId).map(loc => (
                                 <SelectItem key={loc.id} value={loc.name}>{loc.name}</SelectItem>
                             ))}
                         </SelectContent>
@@ -762,5 +787,3 @@ function MoveItemDialogContent({ item, onMove, locations }: { item: Item | null,
         </DialogContent>
     );
 }
-
-    
