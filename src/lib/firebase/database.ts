@@ -1,5 +1,5 @@
 import { db } from './config';
-import { ref, push, get, set, remove } from 'firebase/database';
+import { ref, push, get, set, remove, update } from 'firebase/database';
 import type { Item, Location, Movement } from '@/lib/types';
 
 // Generic function to fetch data
@@ -31,12 +31,22 @@ export async function createItem(itemData: Omit<Item, 'id'>) {
   }
 }
 
-export async function updateItem(itemId: string, itemData: Partial<Item>) {
+export async function updateItem(itemId: string, itemData: Partial<Omit<Item, 'id'>>) {
     try {
-        await set(ref(db, `items/${itemId}`), itemData);
+        await update(ref(db, `items/${itemId}`), itemData);
         return true;
     } catch (error) {
         console.error("Error updating item:", error);
+        return false;
+    }
+}
+
+export async function deleteItem(itemId: string) {
+    try {
+        await remove(ref(db, `items/${itemId}`));
+        return true;
+    } catch (error) {
+        console.error("Error deleting item:", error);
         return false;
     }
 }
@@ -59,7 +69,8 @@ export async function createLocation(locationData: Omit<Location, 'id'>) {
 export async function updateLocation(locationId: string, locationData: Partial<Location>) {
     try {
         const locationRef = ref(db, `locations/${locationId}`);
-        await set(locationRef, locationData);
+        // Using update instead of set to avoid removing fields not present in locationData
+        await update(locationRef, locationData);
         return true;
     } catch (error) {
         console.error("Error updating location:", error);
@@ -93,11 +104,10 @@ export async function createMovement(movementData: Omit<Movement, 'id' | 'movedA
     await set(newMovementRef, newMovement);
 
     // Update item's location
-    const itemSnapshot = await get(ref(db, `items/${movementData.itemId}`));
+    const itemRef = ref(db, `items/${movementData.itemId}`);
+    const itemSnapshot = await get(itemRef);
     if(itemSnapshot.exists()){
-       const item = itemSnapshot.val();
-       item.location = movementData.toLocation;
-       await set(ref(db, `items/${movementData.itemId}`), item);
+       await update(itemRef, { location: movementData.toLocation });
     }
 
     return { ...newMovement, id: newMovementRef.key };

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -14,6 +15,8 @@ import {
   Warehouse,
   BarChart3,
   MapPin,
+  Trash2,
+  FilePenLine,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -64,7 +67,7 @@ import {
 import type { Item, Movement, Location } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { logOut } from '@/lib/firebase/auth';
-import { getItems, getLocations, getMovements, createItem, createMovement } from '@/lib/firebase/database';
+import { getItems, getLocations, getMovements, createItem, createMovement, updateItem, deleteItem } from '@/lib/firebase/database';
 
 
 export default function Dashboard() {
@@ -77,6 +80,7 @@ export default function Dashboard() {
 
   // State for dialogs
   const [isCreateItemOpen, setCreateItemOpen] = useState(false);
+  const [isEditItemOpen, setEditItemOpen] = useState(false);
   const [isMoveItemOpen, setMoveItemOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
 
@@ -88,7 +92,7 @@ export default function Dashboard() {
         getMovements(),
         getLocations(),
     ]);
-    setItems(itemsData);
+    setItems(itemsData.sort((a, b) => a.name.localeCompare(b.name)));
     setMovements(movementsData.map(m => ({...m, movedAt: new Date(m.movedAt) })).sort((a,b) => b.movedAt.getTime() - a.movedAt.getTime()));
     setLocations(locationsData);
   }
@@ -124,7 +128,7 @@ export default function Dashboard() {
   const handleCreateItem = async (newItemData: Omit<Item, 'id'>) => {
     const newItem = await createItem(newItemData);
     if(newItem) {
-        setItems((prev) => [newItem, ...prev]);
+        await fetchData(); // Refetch to get sorted list
         toast({
           title: 'Success!',
           description: `Item "${newItem.name}" has been created.`,
@@ -138,6 +142,45 @@ export default function Dashboard() {
         })
     }
   };
+
+  const handleEditItem = async (itemData: Partial<Omit<Item, 'id'>>) => {
+    if (!selectedItem) return;
+
+    const success = await updateItem(selectedItem.id, itemData);
+    if (success) {
+      await fetchData();
+      toast({
+        title: 'Success!',
+        description: `Item "${selectedItem.name}" has been updated.`,
+      });
+      setEditItemOpen(false);
+      setSelectedItem(null);
+    } else {
+      toast({
+        title: 'Error',
+        description: 'Failed to update item.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleDeleteItem = async (itemId: string) => {
+    const success = await deleteItem(itemId);
+    if (success) {
+      await fetchData();
+      toast({
+        title: 'Item Deleted',
+        description: 'The item has been successfully deleted.',
+      });
+    } else {
+      toast({
+        title: 'Error',
+        description: 'Failed to delete item.',
+        variant: 'destructive',
+      });
+    }
+  };
+
 
   const handleMoveItem = async (newLocation: string) => {
     if (!selectedItem) return;
@@ -292,6 +335,11 @@ export default function Dashboard() {
                       setSelectedItem(item);
                       setMoveItemOpen(true);
                     }}
+                    onEditClick={() => {
+                        setSelectedItem(item);
+                        setEditItemOpen(true);
+                    }}
+                    onDeleteClick={() => handleDeleteItem(item.id)}
                   />
                 ))}
               </div>
@@ -315,13 +363,28 @@ export default function Dashboard() {
       <Dialog open={isMoveItemOpen} onOpenChange={setMoveItemOpen}>
         <MoveItemDialogContent item={selectedItem} onMove={handleMoveItem} locations={locations} />
       </Dialog>
+      <Dialog open={isEditItemOpen} onOpenChange={setEditItemOpen}>
+        <EditItemDialogContent item={selectedItem} onEdit={handleEditItem} locations={locations} />
+      </Dialog>
     </div>
   );
 }
 
-function ItemCard({ item, onMoveClick }: { item: Item; onMoveClick: () => void }) {
+function ItemCard({ item, onMoveClick, onEditClick, onDeleteClick }: { item: Item; onMoveClick: () => void; onEditClick: () => void; onDeleteClick: () => void; }) {
   return (
     <Card className="flex flex-col">
+       {item.imageUrl && (
+        <div className="relative w-full h-48">
+            <Image
+                src={item.imageUrl}
+                alt={item.name}
+                layout="fill"
+                objectFit="cover"
+                className="rounded-t-lg"
+                data-ai-hint="product image"
+            />
+        </div>
+      )}
       <CardHeader>
         <div className="flex justify-between items-start">
             <div>
@@ -340,8 +403,14 @@ function ItemCard({ item, onMoveClick }: { item: Item; onMoveClick: () => void }
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                <DropdownMenuItem disabled>Edit</DropdownMenuItem>
-                <DropdownMenuItem disabled>Delete</DropdownMenuItem>
+                <DropdownMenuItem onSelect={onEditClick}>
+                    <FilePenLine className="mr-2 h-4 w-4" />
+                    Edit
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={onDeleteClick} className="text-destructive">
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
         </div>
@@ -394,12 +463,12 @@ function CreateItemDialogContent({ onCreate, locations }: { onCreate: (data: Omi
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
   const { toast } = useToast();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !location) {
-      // Basic validation
       toast({
         variant: "destructive",
         title: "Validation Error",
@@ -407,11 +476,11 @@ function CreateItemDialogContent({ onCreate, locations }: { onCreate: (data: Omi
       })
       return;
     }
-    onCreate({ name, description, location });
-    // Reset form
+    onCreate({ name, description, location, imageUrl });
     setName('');
     setDescription('');
     setLocation('');
+    setImageUrl('');
   };
 
   return (
@@ -431,6 +500,10 @@ function CreateItemDialogContent({ onCreate, locations }: { onCreate: (data: Omi
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="description" className="text-right">Description</Label>
             <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} className="col-span-3" />
+          </div>
+           <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="imageUrl" className="text-right">Image URL</Label>
+            <Input id="imageUrl" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} className="col-span-3" placeholder="https://placehold.co/600x400"/>
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="location" className="text-right">Location</Label>
@@ -453,6 +526,73 @@ function CreateItemDialogContent({ onCreate, locations }: { onCreate: (data: Omi
     </DialogContent>
   );
 }
+
+function EditItemDialogContent({ item, onEdit, locations }: { item: Item | null, onEdit: (data: Partial<Omit<Item, 'id'>>) => void; locations: Location[] }) {
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [location, setLocation] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
+
+  useEffect(() => {
+    if (item) {
+      setName(item.name);
+      setDescription(item.description);
+      setLocation(item.location);
+      setImageUrl(item.imageUrl || '');
+    }
+  }, [item]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onEdit({ name, description, location, imageUrl });
+  };
+  
+  if (!item) return null;
+
+  return (
+    <DialogContent className="sm:max-w-[425px]">
+      <DialogHeader>
+        <DialogTitle>Edit "{item.name}"</DialogTitle>
+        <DialogDescription>
+          Update the details for this item.
+        </DialogDescription>
+      </DialogHeader>
+      <form onSubmit={handleSubmit}>
+        <div className="grid gap-4 py-4">
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="edit-name" className="text-right">Name</Label>
+            <Input id="edit-name" value={name} onChange={(e) => setName(e.target.value)} className="col-span-3" required/>
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="edit-description" className="text-right">Description</Label>
+            <Textarea id="edit-description" value={description} onChange={(e) => setDescription(e.target.value)} className="col-span-3" />
+          </div>
+           <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="edit-imageUrl" className="text-right">Image URL</Label>
+            <Input id="edit-imageUrl" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} className="col-span-3" placeholder="https://placehold.co/600x400" />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="edit-location" className="text-right">Location</Label>
+            <Select onValueChange={setLocation} value={location}>
+                <SelectTrigger id="edit-location" className="col-span-3">
+                    <SelectValue placeholder="Select a location" />
+                </SelectTrigger>
+                <SelectContent>
+                    {locations.map(loc => (
+                        <SelectItem key={loc.id} value={loc.name}>{loc.name}</SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button type="submit">Save Changes</Button>
+        </DialogFooter>
+      </form>
+    </DialogContent>
+  );
+}
+
 
 function MoveItemDialogContent({ item, onMove, locations }: { item: Item | null, onMove: (newLocation: string) => void, locations: Location[] }) {
     const [newLocation, setNewLocation] = useState('');

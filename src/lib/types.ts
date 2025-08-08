@@ -3,6 +3,7 @@ export interface Item {
   name: string;
   description: string;
   location: string;
+  imageUrl?: string;
 }
 
 export interface Movement {
