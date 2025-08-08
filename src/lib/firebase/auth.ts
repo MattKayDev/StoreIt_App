@@ -51,34 +51,6 @@ export async function signInWithGoogle() {
   return { result, error };
 }
 
-export async function signInAsTestUser() {
-  const testEmail = 'test@example.com';
-  const testPassword = 'password';
-  let result = null, error = null;
-
-  try {
-    result = await signInWithEmailAndPassword(auth, testEmail, testPassword);
-  } catch (e: any) {
-    if (e.code === 'auth/user-not-found') {
-      try {
-        const signUpResult = await signUp(testEmail, testPassword);
-        if (signUpResult.error) {
-            throw signUpResult.error;
-        }
-        await updateUserProfile({ displayName: 'Test User' });
-        result = signUpResult.result;
-      } catch (signUpError) {
-        error = signUpError;
-      }
-    } else {
-      error = e;
-    }
-  }
-
-  return { result, error };
-}
-
-
 export async function resetPassword(email) {
     let result = null, error = null;
     try {

@@ -17,7 +17,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Icons } from '@/components/icons'
 import { useToast } from '@/hooks/use-toast';
-import { signIn, signInWithGoogle, resetPassword, signInAsTestUser } from '@/lib/firebase/auth';
+import { signIn, signInWithGoogle, resetPassword } from '@/lib/firebase/auth';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -64,25 +64,6 @@ export default function LoginPage() {
             description: "Logged in successfully.",
         });
         router.push('/');
-    }
-    setIsLoading(false);
-  }
-
-  const handleTestUserLogin = async () => {
-    setIsLoading(true);
-    const { error } = await signInAsTestUser();
-    if (error) {
-      toast({
-        title: "Test Login Failed",
-        description: (error as Error).message,
-        variant: "destructive",
-      });
-    } else {
-      toast({
-        title: "Success",
-        description: "Logged in as Test User.",
-      });
-      router.push('/');
     }
     setIsLoading(false);
   }
@@ -170,11 +151,6 @@ export default function LoginPage() {
               <Button variant="outline" className="w-full hidden" onClick={handleGoogleLogin} disabled={isLoading}>
                 {isLoading ? 'Please wait...' : 'Login with Google'}
               </Button>
-               {process.env.NODE_ENV === 'development' && (
-                <Button variant="outline" type="button" onClick={handleTestUserLogin} disabled={isLoading}>
-                  {isLoading ? 'Please wait...' : 'Login as Test User'}
-                </Button>
-              )}
             </div>
           </form>
           <div className="mt-4 text-center text-sm">
