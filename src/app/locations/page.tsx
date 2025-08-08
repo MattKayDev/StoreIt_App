@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
   MoreHorizontal,
@@ -53,11 +54,13 @@ import type { Location } from '@/lib/types';
 import { mockLocations } from '@/data/mock-data';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { logOut } from '@/lib/firebase/auth';
 
 export default function LocationsPage() {
   const [locations, setLocations] = useState<Location[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isMounted, setIsMounted] = useState(false);
+  const router = useRouter();
   
   const [isCreateLocationOpen, setCreateLocationOpen] = useState(false);
   const [isEditLocationOpen, setEditLocationOpen] = useState(false);
@@ -69,6 +72,19 @@ export default function LocationsPage() {
     setIsMounted(true);
     setLocations(mockLocations);
   }, []);
+
+  const handleLogout = async () => {
+    const { error } = await logOut();
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to log out.",
+        variant: "destructive"
+      });
+    } else {
+      router.push('/login');
+    }
+  };
 
   const filteredLocations = locations.filter(loc =>
     loc.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -196,7 +212,7 @@ export default function LocationsPage() {
               <DropdownMenuItem>Settings</DropdownMenuItem>
               <DropdownMenuItem>Support</DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem asChild><Link href="/login">Logout</Link></DropdownMenuItem>
+              <DropdownMenuItem onSelect={handleLogout}>Logout</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </header>
@@ -342,5 +358,3 @@ function EditLocationDialogContent({ location, onEdit }: { location: Location | 
         </DialogContent>
     )
 }
-
-    

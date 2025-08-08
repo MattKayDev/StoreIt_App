@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   ArrowRightLeft,
   LayoutDashboard,
@@ -66,6 +67,7 @@ import {
 import type { Item, Movement, Location } from '@/lib/types';
 import { mockItems, mockMovements, mockLocations } from '@/data/mock-data';
 import { useToast } from '@/hooks/use-toast';
+import { logOut } from '@/lib/firebase/auth';
 
 export default function Dashboard() {
   const [items, setItems] = useState<Item[]>([]);
@@ -73,6 +75,7 @@ export default function Dashboard() {
   const [locations, setLocations] = useState<Location[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isMounted, setIsMounted] = useState(false);
+  const router = useRouter();
 
   // State for dialogs
   const [isCreateItemOpen, setCreateItemOpen] = useState(false);
@@ -87,6 +90,19 @@ export default function Dashboard() {
     setMovements(mockMovements);
     setLocations(mockLocations);
   }, []);
+
+  const handleLogout = async () => {
+    const { error } = await logOut();
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to log out.",
+        variant: "destructive"
+      });
+    } else {
+      router.push('/login');
+    }
+  };
 
   const filteredItems = useMemo(() => {
     if (!searchQuery) return items;
@@ -242,7 +258,7 @@ export default function Dashboard() {
               <DropdownMenuItem>Settings</DropdownMenuItem>
               <DropdownMenuItem>Support</DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem asChild><Link href="/login">Logout</Link></DropdownMenuItem>
+              <DropdownMenuItem onSelect={handleLogout}>Logout</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </header>
@@ -366,6 +382,7 @@ function CreateItemDialogContent({ onCreate, locations }: { onCreate: (data: Omi
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
+  const { toast } = useToast();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -427,6 +444,7 @@ function CreateItemDialogContent({ onCreate, locations }: { onCreate: (data: Omi
 
 function MoveItemDialogContent({ item, onMove, locations }: { item: Item | null, onMove: (newLocation: string) => void, locations: Location[] }) {
     const [newLocation, setNewLocation] = useState('');
+    const { toast } = useToast();
 
     useEffect(() => {
         if (item) {
@@ -478,7 +496,3 @@ function MoveItemDialogContent({ item, onMove, locations }: { item: Item | null,
         </DialogContent>
     );
 }
-
-    
-
-    
