@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -17,6 +18,9 @@ import {
   MapPin,
   Trash2,
   FilePenLine,
+  Camera,
+  Upload,
+  X,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -64,10 +68,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import type { Item, Movement, Location } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { logOut } from '@/lib/firebase/auth';
 import { getItems, getLocations, getMovements, createItem, createMovement, updateItem, deleteItem } from '@/lib/firebase/database';
+import { uploadImage, deleteImage } from '@/lib/firebase/storage';
 
 
 export default function Dashboard() {
@@ -125,28 +131,55 @@ export default function Dashboard() {
     );
   }, [items, searchQuery]);
 
-  const handleCreateItem = async (newItemData: Omit<Item, 'id'>) => {
-    const newItem = await createItem(newItemData);
-    if(newItem) {
-        await fetchData(); // Refetch to get sorted list
-        toast({
-          title: 'Success!',
-          description: `Item "${newItem.name}" has been created.`,
-        });
-        setCreateItemOpen(false);
-    } else {
-        toast({
+  const handleCreateItem = async (newItemData: Omit<Item, 'id' | 'imageUrl'>, imageData: string | null) => {
+    let imageUrl = '';
+    const tempItem = await createItem({ ...newItemData, imageUrl: '' });
+
+    if(!tempItem) {
+       toast({
             title: 'Error',
             description: 'Failed to create item.',
             variant: 'destructive'
         })
+        return;
     }
+
+    if (imageData) {
+        const uploadedUrl = await uploadImage(imageData, tempItem.id);
+        if (uploadedUrl) {
+            imageUrl = uploadedUrl;
+            await updateItem(tempItem.id, { imageUrl });
+        } else {
+            toast({ title: 'Warning', description: 'Item created, but image upload failed.' });
+        }
+    }
+    
+    await fetchData();
+    toast({
+      title: 'Success!',
+      description: `Item "${newItemData.name}" has been created.`,
+    });
+    setCreateItemOpen(false);
   };
 
-  const handleEditItem = async (itemData: Partial<Omit<Item, 'id'>>) => {
+  const handleEditItem = async (itemData: Partial<Omit<Item, 'id'>>, imageData: string | null) => {
     if (!selectedItem) return;
 
-    const success = await updateItem(selectedItem.id, itemData);
+    let newImageUrl = selectedItem.imageUrl;
+
+    if (imageData) { // New image is being uploaded
+        if (selectedItem.imageUrl && selectedItem.imageUrl.includes('firebasestorage')) {
+            await deleteImage(selectedItem.imageUrl);
+        }
+        const uploadedUrl = await uploadImage(imageData, selectedItem.id);
+        if(uploadedUrl) {
+            newImageUrl = uploadedUrl;
+        } else {
+             toast({ title: 'Warning', description: 'Image upload failed. Old image retained.' });
+        }
+    }
+
+    const success = await updateItem(selectedItem.id, {...itemData, imageUrl: newImageUrl});
     if (success) {
       await fetchData();
       toast({
@@ -255,21 +288,6 @@ export default function Dashboard() {
               </Link>
             </nav>
           </div>
-          <div className="mt-auto p-4 hidden">
-            <Card>
-              <CardHeader className="p-2 pt-0 md:p-4">
-                <CardTitle>Need Help?</CardTitle>
-                <CardDescription>
-                  Contact support for any questions about the inventory system.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-2 pt-0 md:p-4 md:pt-0">
-                <Button size="sm" className="w-full">
-                  Contact Support
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
         </div>
       </aside>
       <div className="flex flex-col">
@@ -295,7 +313,11 @@ export default function Dashboard() {
                 Add Item
               </Button>
             </DialogTrigger>
-            <CreateItemDialogContent onCreate={handleCreateItem} locations={locations} />
+            <ItemDialogContent 
+                onCreate={handleCreateItem} 
+                locations={locations} 
+                toast={toast}
+            />
           </Dialog>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -363,8 +385,13 @@ export default function Dashboard() {
       <Dialog open={isMoveItemOpen} onOpenChange={setMoveItemOpen}>
         <MoveItemDialogContent item={selectedItem} onMove={handleMoveItem} locations={locations} />
       </Dialog>
-      <Dialog open={isEditItemOpen} onOpenChange={setEditItemOpen}>
-        <EditItemDialogContent item={selectedItem} onEdit={handleEditItem} locations={locations} />
+      <Dialog open={isEditItemOpen} onOpenChange={(isOpen) => { setEditItemOpen(isOpen); if (!isOpen) setSelectedItem(null); }}>
+        <ItemDialogContent 
+            item={selectedItem}
+            onEdit={handleEditItem} 
+            locations={locations}
+            toast={toast}
+        />
       </Dialog>
     </div>
   );
@@ -373,10 +400,9 @@ export default function Dashboard() {
 function ItemCard({ item, onMoveClick, onEditClick, onDeleteClick }: { item: Item; onMoveClick: () => void; onEditClick: () => void; onDeleteClick: () => void; }) {
   return (
     <Card className="flex flex-col">
-       {item.imageUrl && (
-        <div className="relative w-full h-48">
+       <div className="relative w-full h-48 bg-muted rounded-t-lg">
             <Image
-                src={item.imageUrl}
+                src={item.imageUrl || `https://placehold.co/600x400/EEE/31343C?text=${item.name.charAt(0)}`}
                 alt={item.name}
                 layout="fill"
                 objectFit="cover"
@@ -384,7 +410,6 @@ function ItemCard({ item, onMoveClick, onEditClick, onDeleteClick }: { item: Ite
                 data-ai-hint="product image"
             />
         </div>
-      )}
       <CardHeader>
         <div className="flex justify-between items-start">
             <div>
@@ -459,36 +484,136 @@ function MovementLogTable({ movements }: { movements: Movement[] }) {
   );
 }
 
-function CreateItemDialogContent({ onCreate, locations }: { onCreate: (data: Omit<Item, 'id'>) => void; locations: Location[] }) {
+function ItemDialogContent({
+  item,
+  onCreate,
+  onEdit,
+  locations,
+  toast,
+}: {
+  item?: Item | null;
+  onCreate?: (data: Omit<Item, 'id' | 'imageUrl'>, imageData: string | null) => void;
+  onEdit?: (data: Partial<Omit<Item, 'id'>>, imageData: string | null) => void;
+  locations: Location[];
+  toast: (args: any) => void;
+}) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
-  const { toast } = useToast();
+  const [imageData, setImageData] = useState<string | null>(null);
+  const [currentImageUrl, setCurrentImageUrl] = useState<string | null>(null);
+
+  const [showCamera, setShowCamera] = useState(false);
+  const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const isEditMode = !!item;
+
+  useEffect(() => {
+    if (item) {
+      setName(item.name);
+      setDescription(item.description);
+      setLocation(item.location);
+      setCurrentImageUrl(item.imageUrl || null);
+      setImageData(null);
+    } else {
+        setName('');
+        setDescription('');
+        setLocation('');
+        setCurrentImageUrl(null);
+        setImageData(null);
+    }
+  }, [item]);
+
+  useEffect(() => {
+    if (showCamera) {
+      const getCameraPermission = async () => {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+          }
+          setHasCameraPermission(true);
+        } catch (error) {
+          console.error('Error accessing camera:', error);
+          setHasCameraPermission(false);
+          toast({
+            variant: 'destructive',
+            title: 'Camera Access Denied',
+            description: 'Please enable camera permissions in your browser settings.',
+          });
+          setShowCamera(false);
+        }
+      };
+      getCameraPermission();
+    } else {
+        if (videoRef.current?.srcObject) {
+            const stream = videoRef.current.srcObject as MediaStream;
+            stream.getTracks().forEach(track => track.stop());
+            videoRef.current.srcObject = null;
+        }
+    }
+  }, [showCamera, toast]);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImageData(reader.result as string);
+        setCurrentImageUrl(null);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+  
+  const handleCapture = () => {
+    if (videoRef.current && canvasRef.current) {
+        const video = videoRef.current;
+        const canvas = canvasRef.current;
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const context = canvas.getContext('2d');
+        if(context) {
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const dataUrl = canvas.toDataURL('image/jpeg');
+            setImageData(dataUrl);
+            setCurrentImageUrl(null);
+            setShowCamera(false);
+        }
+    }
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !location) {
       toast({
-        variant: "destructive",
-        title: "Validation Error",
-        description: "Name and Location are required.",
-      })
+        variant: 'destructive',
+        title: 'Validation Error',
+        description: 'Name and Location are required.',
+      });
       return;
     }
-    onCreate({ name, description, location, imageUrl });
-    setName('');
-    setDescription('');
-    setLocation('');
-    setImageUrl('');
+
+    const itemData = { name, description, location };
+
+    if (isEditMode && onEdit) {
+        onEdit(itemData, imageData);
+    } else if (!isEditMode && onCreate) {
+        onCreate(itemData, imageData);
+    }
   };
+  
+  const imagePreviewUrl = imageData || currentImageUrl;
 
   return (
     <DialogContent className="sm:max-w-[425px]">
       <DialogHeader>
-        <DialogTitle>Create New Item</DialogTitle>
+        <DialogTitle>{isEditMode ? `Edit "${item.name}"` : 'Create New Item'}</DialogTitle>
         <DialogDescription>
-          Fill in the details below to add a new item to your inventory.
+          {isEditMode ? 'Update the details for this item.' : 'Fill in the details below to add a new item.'}
         </DialogDescription>
       </DialogHeader>
       <form onSubmit={handleSubmit}>
@@ -501,9 +626,52 @@ function CreateItemDialogContent({ onCreate, locations }: { onCreate: (data: Omi
             <Label htmlFor="description" className="text-right">Description</Label>
             <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} className="col-span-3" />
           </div>
-           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="imageUrl" className="text-right">Image URL</Label>
-            <Input id="imageUrl" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} className="col-span-3" placeholder="https://placehold.co/600x400"/>
+          <div className="grid grid-cols-4 items-start gap-4">
+            <Label htmlFor="location" className="text-right pt-2">Image</Label>
+            <div className="col-span-3">
+                 {imagePreviewUrl && !showCamera && (
+                    <div className="relative w-full h-40 mb-2">
+                        <Image src={imagePreviewUrl} alt="Item preview" layout="fill" objectFit="cover" className="rounded-md" />
+                        <Button variant="destructive" size="icon" className="absolute top-1 right-1 h-6 w-6" onClick={() => { setImageData(null); setCurrentImageUrl(null); }}>
+                            <X className="h-4 w-4" />
+                        </Button>
+                    </div>
+                )}
+                 {showCamera && (
+                    <div className="relative w-full mb-2">
+                        <video ref={videoRef} className="w-full aspect-video rounded-md" autoPlay muted playsInline />
+                         {hasCameraPermission === false && (
+                            <Alert variant="destructive">
+                                <AlertTitle>Camera Access Required</AlertTitle>
+                                <AlertDescription>
+                                Please allow camera access to use this feature.
+                                </AlertDescription>
+                            </Alert>
+                        )}
+                    </div>
+                 )}
+                
+                <div className="flex gap-2">
+                    {!showCamera && (
+                        <>
+                            <Button type="button" size="sm" variant="outline" onClick={() => fileInputRef.current?.click()}>
+                                <Upload className="mr-2 h-4 w-4" /> Upload
+                            </Button>
+                            <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
+                            <Button type="button" size="sm" variant="outline" onClick={() => setShowCamera(true)}>
+                                <Camera className="mr-2 h-4 w-4" /> Camera
+                            </Button>
+                        </>
+                    )}
+                    {showCamera && (
+                        <>
+                            <Button type="button" size="sm" onClick={handleCapture} disabled={!hasCameraPermission}>Take Picture</Button>
+                            <Button type="button" size="sm" variant="ghost" onClick={() => setShowCamera(false)}>Cancel</Button>
+                        </>
+                    )}
+                </div>
+                 <canvas ref={canvasRef} className="hidden"></canvas>
+            </div>
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="location" className="text-right">Location</Label>
@@ -520,73 +688,7 @@ function CreateItemDialogContent({ onCreate, locations }: { onCreate: (data: Omi
           </div>
         </div>
         <DialogFooter>
-          <Button type="submit">Create Item</Button>
-        </DialogFooter>
-      </form>
-    </DialogContent>
-  );
-}
-
-function EditItemDialogContent({ item, onEdit, locations }: { item: Item | null, onEdit: (data: Partial<Omit<Item, 'id'>>) => void; locations: Location[] }) {
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [location, setLocation] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
-
-  useEffect(() => {
-    if (item) {
-      setName(item.name);
-      setDescription(item.description);
-      setLocation(item.location);
-      setImageUrl(item.imageUrl || '');
-    }
-  }, [item]);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onEdit({ name, description, location, imageUrl });
-  };
-  
-  if (!item) return null;
-
-  return (
-    <DialogContent className="sm:max-w-[425px]">
-      <DialogHeader>
-        <DialogTitle>Edit "{item.name}"</DialogTitle>
-        <DialogDescription>
-          Update the details for this item.
-        </DialogDescription>
-      </DialogHeader>
-      <form onSubmit={handleSubmit}>
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="edit-name" className="text-right">Name</Label>
-            <Input id="edit-name" value={name} onChange={(e) => setName(e.target.value)} className="col-span-3" required/>
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="edit-description" className="text-right">Description</Label>
-            <Textarea id="edit-description" value={description} onChange={(e) => setDescription(e.target.value)} className="col-span-3" />
-          </div>
-           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="edit-imageUrl" className="text-right">Image URL</Label>
-            <Input id="edit-imageUrl" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} className="col-span-3" placeholder="https://placehold.co/600x400" />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="edit-location" className="text-right">Location</Label>
-            <Select onValueChange={setLocation} value={location}>
-                <SelectTrigger id="edit-location" className="col-span-3">
-                    <SelectValue placeholder="Select a location" />
-                </SelectTrigger>
-                <SelectContent>
-                    {locations.map(loc => (
-                        <SelectItem key={loc.id} value={loc.name}>{loc.name}</SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
-          </div>
-        </div>
-        <DialogFooter>
-          <Button type="submit">Save Changes</Button>
+          <Button type="submit">{isEditMode ? "Save Changes" : "Create Item"}</Button>
         </DialogFooter>
       </form>
     </DialogContent>

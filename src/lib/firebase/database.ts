@@ -1,6 +1,7 @@
 import { db } from './config';
 import { ref, push, get, set, remove, update } from 'firebase/database';
 import type { Item, Location, Movement } from '@/lib/types';
+import { deleteImage } from './storage';
 
 // Generic function to fetch data
 async function fetchData<T>(path: string): Promise<T[]> {
@@ -23,7 +24,7 @@ export const getItems = () => fetchData<Item>('items');
 export async function createItem(itemData: Omit<Item, 'id'>) {
   try {
     const newItemRef = push(ref(db, 'items'));
-    await set(newItemRef, itemData);
+    await set(newItemRef, { ...itemData, id: newItemRef.key });
     return { ...itemData, id: newItemRef.key };
   } catch (error) {
     console.error("Error creating item:", error);
@@ -43,7 +44,15 @@ export async function updateItem(itemId: string, itemData: Partial<Omit<Item, 'i
 
 export async function deleteItem(itemId: string) {
     try {
-        await remove(ref(db, `items/${itemId}`));
+        const itemRef = ref(db, `items/${itemId}`);
+        const snapshot = await get(itemRef);
+        if(snapshot.exists()) {
+            const itemData = snapshot.val() as Item;
+            if (itemData.imageUrl && itemData.imageUrl.includes('firebasestorage')) {
+                await deleteImage(itemData.imageUrl);
+            }
+        }
+        await remove(itemRef);
         return true;
     } catch (error) {
         console.error("Error deleting item:", error);
