@@ -147,7 +147,7 @@ export default function LoginPage() {
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? 'Logging in...' : 'Login'}
               </Button>
-              <Button variant="outline" className="w-full" onClick={handleGoogleLogin} disabled={isLoading}>
+              <Button variant="outline" className="w-full hidden" onClick={handleGoogleLogin} disabled={isLoading}>
                 {isLoading ? 'Please wait...' : 'Login with Google'}
               </Button>
             </div>
