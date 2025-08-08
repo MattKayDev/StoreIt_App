@@ -16,7 +16,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Icons } from '@/components/icons'
 import { useToast } from '@/hooks/use-toast';
-import { signIn } from '@/lib/firebase/auth';
+import { signIn, signInWithGoogle, resetPassword } from '@/lib/firebase/auth';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -35,7 +35,7 @@ export default function LoginPage() {
     if (error) {
       toast({
         title: "Login Failed",
-        description: (error as Error).message,
+        description: "Please check your email and password.",
         variant: "destructive",
       });
     } else {
@@ -47,6 +47,52 @@ export default function LoginPage() {
     }
     setIsLoading(false);
   };
+
+  const handleGoogleLogin = async () => {
+    setIsLoading(true);
+    const { result, error } = await signInWithGoogle();
+    if (error) {
+       toast({
+        title: "Login Failed",
+        description: "Could not log in with Google. Please try again.",
+        variant: "destructive",
+      });
+    } else {
+        toast({
+            title: "Success",
+            description: "Logged in successfully.",
+        });
+        router.push('/');
+    }
+    setIsLoading(false);
+  }
+
+  const handlePasswordReset = async () => {
+    if (!email) {
+      toast({
+        title: "Email required",
+        description: "Please enter your email address to reset your password.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsLoading(true);
+    const { error } = await resetPassword(email);
+    if(error) {
+        toast({
+            title: "Error",
+            description: "Failed to send password reset email.",
+            variant: "destructive",
+        })
+    } else {
+        toast({
+            title: "Password Reset Email Sent",
+            description: "Check your inbox for password reset instructions.",
+        })
+    }
+    setIsLoading(false);
+  }
 
 
   return (
@@ -79,12 +125,15 @@ export default function LoginPage() {
               <div className="grid gap-2">
                 <div className="flex items-center">
                   <Label htmlFor="password">Password</Label>
-                  <Link
-                    href="#"
+                  <Button
+                    type="button"
+                    variant="link"
                     className="ml-auto inline-block text-sm underline"
+                    onClick={handlePasswordReset}
+                    disabled={isLoading}
                   >
                     Forgot your password?
-                  </Link>
+                  </Button>
                 </div>
                 <Input 
                   id="password" 
@@ -98,8 +147,8 @@ export default function LoginPage() {
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? 'Logging in...' : 'Login'}
               </Button>
-              <Button variant="outline" className="w-full" disabled={isLoading}>
-                Login with Google
+              <Button variant="outline" className="w-full" onClick={handleGoogleLogin} disabled={isLoading}>
+                {isLoading ? 'Please wait...' : 'Login with Google'}
               </Button>
             </div>
           </form>
