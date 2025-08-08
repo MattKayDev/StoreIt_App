@@ -11,7 +11,7 @@
     "items": {
       ".indexOn": "ownerId",
       "$itemId": {
-        ".read": "data.child('ownerId').val() === auth.uid || root.child('shares').orderByChild('shareeEmail').equalTo(auth.token.email).val().some(s => s.sharerId === data.child('ownerId').val() && s.status === 'accepted')",
+        ".read": "data.child('ownerId').val() === auth.uid || root.child('shares').orderByChild('shareeEmail').equalTo(auth.token.email).val() != null",
         ".write": "data.exists() ? data.child('ownerId').val() === auth.uid : newData.child('ownerId').val() === auth.uid",
         ".validate": "newData.hasChildren(['name', 'description', 'location', 'imageUrl', 'ownerId']) && (data.exists() ? newData.child('ownerId').val() === data.child('ownerId').val() : newData.child('ownerId').val() === auth.uid)"
       }
@@ -19,7 +19,7 @@
     "locations": {
       ".indexOn": "ownerId",
       "$locationId": {
-        ".read": "data.child('ownerId').val() === auth.uid || root.child('shares').orderByChild('shareeEmail').equalTo(auth.token.email).val().some(s => s.sharerId === data.child('ownerId').val() && s.status === 'accepted')",
+        ".read": "data.child('ownerId').val() === auth.uid || root.child('shares').orderByChild('shareeEmail').equalTo(auth.token.email).val() != null",
         ".write": "data.exists() ? data.child('ownerId').val() === auth.uid : newData.child('ownerId').val() === auth.uid",
         ".validate": "newData.hasChildren(['name', 'ownerId']) && (data.exists() ? newData.child('ownerId').val() === data.child('ownerId').val() : newData.child('ownerId').val() === auth.uid)"
       }
@@ -27,7 +27,7 @@
     "activity": {
       ".indexOn": "ownerId",
       "$logId": {
-        ".read": "data.child('ownerId').val() === auth.uid || root.child('shares').orderByChild('shareeEmail').equalTo(auth.token.email).val().some(s => s.sharerId === data.child('ownerId').val() && s.status === 'accepted')",
+        ".read": "data.child('ownerId').val() === auth.uid || root.child('shares').orderByChild('shareeEmail').equalTo(auth.token.email).val() != null",
         ".write": "!data.exists() && root.child('items').child(newData.child('itemId').val()).child('ownerId').val() === auth.uid",
         ".validate": "newData.hasChildren(['itemId', 'itemName', 'action', 'loggedBy', 'loggedAt', 'ownerId']) && newData.child('ownerId').val() === root.child('items').child(newData.child('itemId').val()).child('ownerId').val()"
       }
