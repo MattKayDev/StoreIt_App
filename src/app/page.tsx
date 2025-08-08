@@ -390,6 +390,9 @@ function ItemCard({ item, onMoveClick, onEditClick, onDeleteClick }: { item: Ite
                 </div>
             </DialogTrigger>
             <DialogContent className="max-w-4xl p-0">
+                <DialogHeader>
+                    <DialogTitle className="sr-only">{item.name}</DialogTitle>
+                </DialogHeader>
                 <Image 
                   src={item.imageUrl} 
                   alt={item.name} 
