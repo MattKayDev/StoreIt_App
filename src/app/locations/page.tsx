@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -14,6 +15,7 @@ import {
   MapPin,
   Trash2,
   FilePenLine,
+  History
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -181,6 +183,13 @@ export default function LocationsPage() {
               >
                 <MapPin className="h-4 w-4" />
                 Locations
+              </Link>
+              <Link
+                href="/movements"
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
+              >
+                <History className="h-4 w-4" />
+                Movement Log
               </Link>
               <Link
                 href="#"

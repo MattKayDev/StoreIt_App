@@ -19,7 +19,8 @@ import {
   Trash2,
   FilePenLine,
   Upload,
-  Camera
+  Camera,
+  History
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -48,7 +49,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Dialog,
   DialogContent,
@@ -70,13 +70,12 @@ import {
 import type { Item, Movement, Location } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { logOut } from '@/lib/firebase/auth';
-import { getItems, getLocations, getMovements, createItem, createMovement, updateItem, deleteItem } from '@/lib/firebase/database';
+import { getItems, getLocations, createItem, createMovement, updateItem, deleteItem } from '@/lib/firebase/database';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 
 export default function Dashboard() {
   const [items, setItems] = useState<Item[]>([]);
-  const [movements, setMovements] = useState<Movement[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isMounted, setIsMounted] = useState(false);
@@ -91,13 +90,11 @@ export default function Dashboard() {
   const { toast } = useToast();
 
   const fetchData = async () => {
-    const [itemsData, movementsData, locationsData] = await Promise.all([
+    const [itemsData, locationsData] = await Promise.all([
         getItems(),
-        getMovements(),
         getLocations(),
     ]);
     setItems(itemsData.sort((a, b) => a.name.localeCompare(b.name)));
-    setMovements(movementsData.map(m => ({...m, movedAt: new Date(m.movedAt) })).sort((a,b) => b.movedAt.getTime() - a.movedAt.getTime()));
     setLocations(locationsData);
   }
 
@@ -246,6 +243,13 @@ export default function Dashboard() {
                 Locations
               </Link>
               <Link
+                href="/movements"
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
+              >
+                <History className="h-4 w-4" />
+                Movement Log
+              </Link>
+              <Link
                 href="#"
                 className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hidden"
               >
@@ -313,46 +317,23 @@ export default function Dashboard() {
           </DropdownMenu>
         </header>
         <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-          <Tabs defaultValue="inventory">
-            <div className="flex items-center">
-              <TabsList>
-                <TabsTrigger value="inventory">Inventory</TabsTrigger>
-                <TabsTrigger value="movements">Movement Log</TabsTrigger>
-              </TabsList>
-            </div>
-            <TabsContent value="inventory" className="mt-4">
-               <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-3 xl:grid-cols-4">
-                {filteredItems.map((item) => (
-                  <ItemCard 
-                    key={item.id} 
-                    item={item} 
-                    onMoveClick={() => {
-                      setSelectedItem(item);
-                      setMoveItemOpen(true);
-                    }}
-                    onEditClick={() => {
-                        setSelectedItem(item);
-                        setEditItemOpen(true);
-                    }}
-                    onDeleteClick={() => handleDeleteItem(item.id)}
-                  />
-                ))}
-              </div>
-            </TabsContent>
-            <TabsContent value="movements" className="mt-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Movement Log</CardTitle>
-                  <CardDescription>
-                    A log of all item movements within the system.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <MovementLogTable movements={movements} />
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
+           <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-3 xl:grid-cols-4">
+            {filteredItems.map((item) => (
+              <ItemCard 
+                key={item.id} 
+                item={item} 
+                onMoveClick={() => {
+                  setSelectedItem(item);
+                  setMoveItemOpen(true);
+                }}
+                onEditClick={() => {
+                    setSelectedItem(item);
+                    setEditItemOpen(true);
+                }}
+                onDeleteClick={() => handleDeleteItem(item.id)}
+              />
+            ))}
+          </div>
         </main>
       </div>
       <Dialog open={isMoveItemOpen} onOpenChange={setMoveItemOpen}>
@@ -442,38 +423,6 @@ function ItemCard({ item, onMoveClick, onEditClick, onDeleteClick }: { item: Ite
         </Button>
       </CardFooter>
     </Card>
-  );
-}
-
-function MovementLogTable({ movements }: { movements: Movement[] }) {
-  const formatDate = (date: Date) => new Intl.DateTimeFormat('en-US', {
-      year: 'numeric', month: 'short', day: 'numeric',
-      hour: '2-digit', minute: '2-digit',
-  }).format(date);
-
-  return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Item</TableHead>
-          <TableHead>From</TableHead>
-          <TableHead>To</TableHead>
-          <TableHead className="hidden md:table-cell">Moved By</TableHead>
-          <TableHead>Date</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {movements.map((move) => (
-          <TableRow key={move.id}>
-            <TableCell className="font-medium">{move.itemName}</TableCell>
-            <TableCell>{move.fromLocation}</TableCell>
-            <TableCell>{move.toLocation}</TableCell>
-            <TableCell className="hidden md:table-cell">{move.movedBy}</TableCell>
-            <TableCell>{formatDate(new Date(move.movedAt))}</TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
   );
 }
 
