@@ -9,7 +9,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyBtPwxAthwwA_EEKlh8kGDQ81ja6MTEotI",
   authDomain: "inventrack-2hiqb.firebaseapp.com",
   messagingSenderId: "59110427809",
-  databaseURL: "https://inventrack-2hiqb-default-rtdb.firebaseio.com"
+  databaseURL: "https://inventrack-2hiqb-default-rtdb.europe-west1.firebasedatabase.app"
 };
 
 // Initialize Firebase
