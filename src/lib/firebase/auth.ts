@@ -12,6 +12,7 @@ import {
   updatePassword,
 } from 'firebase/auth';
 import { auth } from './config';
+import { saveUserEmail } from './database';
 
 const googleProvider = new GoogleAuthProvider();
 
@@ -20,6 +21,9 @@ export async function signUp(email, password) {
     error = null;
   try {
     result = await createUserWithEmailAndPassword(auth, email, password);
+    if (result.user) {
+        await saveUserEmail(result.user);
+    }
   } catch (e) {
     error = e;
   }
@@ -45,6 +49,9 @@ export async function signInWithGoogle() {
   try {
     await setPersistence(auth, browserLocalPersistence);
     result = await signInWithPopup(auth, googleProvider);
+     if (result.user) {
+        await saveUserEmail(result.user);
+    }
   } catch (e) {
     error = e;
   }

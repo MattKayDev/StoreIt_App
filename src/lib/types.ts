@@ -4,6 +4,7 @@ export interface Item {
   description: string;
   location: string;
   imageUrl?: string;
+  ownerId: string;
 }
 
 export type LogAction = 'Created' | 'Updated' | 'Moved' | 'Deleted';
@@ -18,10 +19,20 @@ export interface LogEntry {
   details?: string;
   loggedBy: string;
   loggedAt: string; // Stored as ISO string in DB
+  ownerId: string;
 }
 
 
 export interface Location {
+  id: string;
+  name:string;
+  ownerId: string;
+}
+
+export interface Share {
     id: string;
-    name: string;
+    sharerId: string;
+    sharerEmail: string;
+    shareeEmail: string;
+    status: 'pending' | 'accepted';
 }

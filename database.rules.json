@@ -1,23 +1,45 @@
-
 {
   "rules": {
-    ".read": "auth != null",
-    ".write": "auth != null",
+    "users": {
+      "$uid": {
+        ".read": "$uid === auth.uid",
+        ".write": "$uid === auth.uid"
+      }
+    },
     "items": {
       "$itemId": {
-        ".validate": "newData.hasChildren(['name', 'description', 'location', 'imageUrl']) && newData.child('name').isString() && newData.child('name').val().length > 0 && newData.child('description').isString() && newData.child('location').isString() && newData.child('location').val().length > 0 && newData.child('imageUrl').isString()"
+        // Read access if you are the owner OR if the owner has shared with you
+        ".read": "data.child('ownerId').val() === auth.uid || root.child('shares').child(data.child('ownerId').val() + '_' + auth.uid).exists()",
+        // Write access only if you are the owner
+        ".write": "newData.child('ownerId').val() === auth.uid",
+        // Validate on create that ownerId is set to the user, and on update that it's not changed
+        ".validate": "newData.hasChildren(['name', 'description', 'location', 'imageUrl', 'ownerId']) && (data.exists() ? newData.child('ownerId').val() === data.child('ownerId').val() : newData.child('ownerId').val() === auth.uid)"
       }
     },
     "locations": {
       "$locationId": {
-        ".validate": "newData.hasChild('name') && newData.child('name').isString() && newData.child('name').val().length > 0"
+         // Read access if you are the owner OR if the owner has shared with you
+        ".read": "data.child('ownerId').val() === auth.uid || root.child('shares').child(data.child('ownerId').val() + '_' + auth.uid).exists()",
+        // Write access only if you are the owner
+        ".write": "newData.child('ownerId').val() === auth.uid",
+        ".validate": "newData.hasChildren(['name', 'ownerId']) && (data.exists() ? newData.child('ownerId').val() === data.child('ownerId').val() : newData.child('ownerId').val() === auth.uid)"
       }
     },
     "activity": {
       "$logId": {
-        // Log entries are append-only
-        ".write": "!data.exists() && newData.child('loggedBy').val() === auth.token.name",
-        ".validate": "newData.hasChildren(['itemId', 'itemName', 'action', 'loggedBy', 'loggedAt']) && (newData.child('action').val() === 'Created' || newData.child('action').val() === 'Updated' || newData.child('action').val() === 'Moved' || newData.child('action').val() === 'Deleted')"
+         // Read access if you are the owner OR if the owner has shared with you
+        ".read": "data.child('ownerId').val() === auth.uid || root.child('shares').child(data.child('ownerId').val() + '_' + auth.uid).exists()",
+        // Append-only, and only the owner of the item can log activity for it
+        ".write": "!data.exists() && root.child('items').child(newData.child('itemId').val()).child('ownerId').val() === auth.uid",
+        ".validate": "newData.hasChildren(['itemId', 'itemName', 'action', 'loggedBy', 'loggedAt', 'ownerId']) && newData.child('ownerId').val() === root.child('items').child(newData.child('itemId').val()).child('ownerId').val()"
+      }
+    },
+    "shares": {
+      "$shareId": {
+        // A user can read a share if they are the sharer or if the share is for their email
+        ".read": "data.child('sharerId').val() === auth.uid || data.child('shareeEmail').val() === auth.token.email",
+        // Allow write if creating a new share for yourself OR if accepting a share
+        ".write": "(newData.child('sharerId').val() === auth.uid && !data.exists()) || (newData.child('status').val() === 'accepted' && data.child('shareeEmail').val() === auth.token.email)"
       }
     }
   }

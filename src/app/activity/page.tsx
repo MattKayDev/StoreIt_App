@@ -176,15 +176,8 @@ export default function ActivityPage() {
                 Activity Log
               </Link>
               <Link
-                href="#"
-                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hidden"
-              >
-                <BarChart3 className="h-4 w-4" />
-                Reports
-              </Link>
-              <Link
-                href="#"
-                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hidden"
+                href="/settings"
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
               >
                 <Settings className="h-4 w-4" />
                 Settings
@@ -239,6 +232,13 @@ export default function ActivityPage() {
                   <History className="h-5 w-5" />
                   Activity Log
                 </Link>
+                 <Link
+                  href="/settings"
+                  className="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground"
+                >
+                  <Settings className="h-5 w-5" />
+                  Settings
+                </Link>
               </nav>
             </SheetContent>
           </Sheet>
@@ -281,7 +281,7 @@ export default function ActivityPage() {
             <CardHeader>
                 <CardTitle>Activity Log</CardTitle>
                 <CardDescription>
-                  A log of all item creations, updates, movements, and deletions.
+                  A log of all item creations, updates, movements, and deletions for your items and items shared with you.
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -337,5 +337,3 @@ function ActivityLogTable({ logEntries }: { logEntries: LogEntry[] }) {
     </Table>
   );
 }
-
-    

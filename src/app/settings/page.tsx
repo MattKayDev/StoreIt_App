@@ -18,6 +18,10 @@ import {
   Trash2,
   Moon,
   Sun,
+  Share2,
+  Check,
+  X,
+  Send,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
@@ -55,6 +59,10 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { logOut, updateUserProfile, updateUserPassword } from '@/lib/firebase/auth';
 import { auth } from '@/lib/firebase/config';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import type { Share } from '@/lib/types';
+import { createShare, getMyShares, getPendingShares, acceptShare, declineShare, deleteShare } from '@/lib/firebase/database';
+import { Badge } from '@/components/ui/badge';
+
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -67,6 +75,10 @@ export default function SettingsPage() {
 
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  
+  const [myShares, setMyShares] = useState<Share[]>([]);
+  const [pendingShares, setPendingShares] = useState<Share[]>([]);
+  const [shareEmail, setShareEmail] = useState("");
 
   const [isCameraMode, setCameraMode] = useState(false);
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
@@ -82,12 +94,23 @@ export default function SettingsPage() {
         setUser(currentUser);
         setDisplayName(currentUser.displayName || '');
         setPhotoURL(currentUser.photoURL || null);
+        fetchShares(currentUser);
       } else {
         router.push('/login');
       }
     });
     return () => unsubscribe();
   }, [router]);
+
+  const fetchShares = async (currentUser: any) => {
+      if(!currentUser) return;
+      const [mySharesData, pendingSharesData] = await Promise.all([
+          getMyShares(),
+          getPendingShares(),
+      ]);
+      setMyShares(mySharesData);
+      setPendingShares(pendingSharesData);
+  }
 
   const getInitials = (name: string | null | undefined) => {
     if (!name) return 'U';
@@ -184,7 +207,57 @@ export default function SettingsPage() {
       }
     }
   };
-  
+
+    const handleShare = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!shareEmail) {
+            toast({ title: "Email required", description: "Please enter an email to share with.", variant: "destructive" });
+            return;
+        }
+        if (shareEmail === user.email) {
+            toast({ title: "Cannot share with yourself", variant: "destructive" });
+            return;
+        }
+        const result = await createShare(shareEmail);
+        if (result) {
+            toast({ title: "Invitation Sent", description: `An invitation has been sent to ${shareEmail}.` });
+            setShareEmail('');
+            fetchShares(user);
+        } else {
+            toast({ title: "Error", description: "Failed to send invitation.", variant: "destructive" });
+        }
+    };
+
+    const handleAcceptShare = async (shareId: string) => {
+        const success = await acceptShare(shareId);
+        if (success) {
+            toast({ title: "Share Accepted", description: "You can now access the shared items." });
+            fetchShares(user);
+        } else {
+            toast({ title: "Error", description: "Failed to accept share.", variant: "destructive" });
+        }
+    };
+
+    const handleDeclineShare = async (shareId: string) => {
+        const success = await declineShare(shareId);
+        if (success) {
+            toast({ title: "Share Declined" });
+            fetchShares(user);
+        } else {
+            toast({ title: "Error", description: "Failed to decline share.", variant: "destructive" });
+        }
+    };
+
+    const handleDeleteShare = async (shareId: string) => {
+        const success = await deleteShare(shareId);
+        if (success) {
+            toast({ title: "Share Revoked" });
+            fetchShares(user);
+        } else {
+            toast({ title: "Error", description: "Failed to revoke share.", variant: "destructive" });
+        }
+    };
+
   if (!isMounted || !user) {
     return null; // or a loading spinner
   }
@@ -221,6 +294,13 @@ export default function SettingsPage() {
               >
                 <History className="h-4 w-4" />
                 Activity Log
+              </Link>
+              <Link
+                href="/settings"
+                className="flex items-center gap-3 rounded-lg bg-muted px-3 py-2 text-primary transition-all hover:text-primary"
+              >
+                <Settings className="h-4 w-4" />
+                Settings
               </Link>
             </nav>
           </div>
@@ -272,6 +352,13 @@ export default function SettingsPage() {
                   <History className="h-5 w-5" />
                   Activity Log
                 </Link>
+                 <Link
+                  href="/settings"
+                  className="mx-[-0.65rem] flex items-center gap-4 rounded-xl bg-muted px-3 py-2 text-foreground hover:text-foreground"
+                >
+                  <Settings className="h-5 w-5" />
+                  Settings
+                </Link>
               </nav>
             </SheetContent>
           </Sheet>
@@ -307,6 +394,56 @@ export default function SettingsPage() {
         </header>
         <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
             <div className="grid gap-6">
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Manage Sharing</CardTitle>
+                        <CardDescription>Share your items and locations with other users or manage pending invitations.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        {pendingShares.length > 0 && (
+                            <div className="space-y-2">
+                                <Label>Pending Invitations</Label>
+                                <div className="space-y-2 rounded-lg border p-2">
+                                    {pendingShares.map(share => (
+                                        <div key={share.id} className="flex items-center justify-between">
+                                            <p className="text-sm">Invitation from <span className="font-medium">{share.sharerEmail}</span></p>
+                                            <div className="flex gap-2">
+                                                <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => handleAcceptShare(share.id)}><Check className="h-4 w-4" /></Button>
+                                                <Button size="icon" variant="destructive" className="h-8 w-8" onClick={() => handleDeclineShare(share.id)}><X className="h-4 w-4" /></Button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                        <div className="space-y-2">
+                            <Label>Share with a new user</Label>
+                             <form onSubmit={handleShare} className="flex gap-2">
+                                <Input type="email" placeholder="Enter user's email" value={shareEmail} onChange={e => setShareEmail(e.target.value)} />
+                                <Button type="submit">
+                                    <Send className="mr-2 h-4 w-4" /> Share
+                                </Button>
+                            </form>
+                        </div>
+
+                        <div className="space-y-2">
+                           <Label>Currently Sharing With</Label>
+                           {myShares.length > 0 ? (
+                            <div className="space-y-2 rounded-lg border p-2">
+                                {myShares.map(share => (
+                                    <div key={share.id} className="flex items-center justify-between">
+                                        <div>
+                                            <p className="text-sm font-medium">{share.shareeEmail}</p>
+                                            <Badge variant={share.status === 'pending' ? 'secondary' : 'default'}>{share.status}</Badge>
+                                        </div>
+                                        <Button size="icon" variant="destructive" className="h-8 w-8" onClick={() => handleDeleteShare(share.id)}><Trash2 className="h-4 w-4" /></Button>
+                                    </div>
+                                ))}
+                            </div>
+                           ) : <p className="text-sm text-muted-foreground">You are not currently sharing your items with anyone.</p> }
+                        </div>
+                    </CardContent>
+                </Card>
                 <Card>
                     <CardHeader>
                         <CardTitle>Profile</CardTitle>
