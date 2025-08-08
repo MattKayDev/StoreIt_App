@@ -371,18 +371,35 @@ export default function Dashboard() {
 }
 
 function ItemCard({ item, onMoveClick, onEditClick, onDeleteClick }: { item: Item; onMoveClick: () => void; onEditClick: () => void; onDeleteClick: () => void; }) {
+  const [isImageModalOpen, setImageModalOpen] = useState(false);
+  
   return (
     <Card className="flex flex-col">
-       <div className="relative w-full h-48 bg-muted rounded-t-lg">
-            <Image
-                src={item.imageUrl || `https://placehold.co/600x400/EEE/31343C?text=${item.name.charAt(0)}`}
-                alt={item.name}
-                layout="fill"
-                objectFit="cover"
-                className="rounded-t-lg"
-                data-ai-hint="product image"
-            />
-        </div>
+       {item.imageUrl && (
+         <Dialog open={isImageModalOpen} onOpenChange={setImageModalOpen}>
+            <DialogTrigger asChild>
+                <div className="relative w-full h-48 bg-muted rounded-t-lg cursor-pointer">
+                    <Image
+                        src={item.imageUrl}
+                        alt={item.name}
+                        layout="fill"
+                        objectFit="cover"
+                        className="rounded-t-lg"
+                        data-ai-hint="product image"
+                    />
+                </div>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl p-0">
+                <Image 
+                  src={item.imageUrl} 
+                  alt={item.name} 
+                  width={1200}
+                  height={800}
+                  className="rounded-lg object-contain"
+                />
+            </DialogContent>
+         </Dialog>
+        )}
       <CardHeader>
         <div className="flex justify-between items-start">
             <div>
