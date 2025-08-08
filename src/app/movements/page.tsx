@@ -12,6 +12,7 @@ import {
   MapPin,
   History,
   Menu,
+  Download,
   Moon,
   Sun,
 } from 'lucide-react';
@@ -51,17 +52,18 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
-import type { Movement } from '@/lib/types';
+import type { LogEntry } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { logOut } from '@/lib/firebase/auth';
 import { auth } from '@/lib/firebase/config';
-import { getMovements } from '@/lib/firebase/database';
+import { getActivityLog } from '@/lib/firebase/database';
 import { onAuthStateChanged } from 'firebase/auth';
+import { Badge } from '@/components/ui/badge';
 
 
-export default function MovementsPage() {
-  const [movements, setMovements] = useState<Movement[]>([]);
+export default function ActivityPage() {
+  const [logEntries, setLogEntries] = useState<LogEntry[]>([]);
   const [isMounted, setIsMounted] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
@@ -79,15 +81,14 @@ export default function MovementsPage() {
     return () => unsubscribe();
   }, [router]);
 
-  const fetchMovements = async () => {
-    const movementsData = await getMovements();
-    setMovements(movementsData.map(m => ({ ...m, movedAt: new Date(m.movedAt) })).sort((a,b) => b.movedAt.getTime() - a.movedAt.getTime()));
-  }
-
   useEffect(() => {
     setIsMounted(true);
     if (user) {
-      fetchMovements();
+      const fetchLog = async () => {
+        const logData = await getActivityLog();
+        setLogEntries(logData.map(l => ({ ...l, loggedAt: new Date(l.loggedAt).toISOString() })).sort((a,b) => new Date(b.loggedAt).getTime() - new Date(a.loggedAt).getTime()));
+      }
+      fetchLog();
     }
   }, [user]);
 
@@ -102,6 +103,30 @@ export default function MovementsPage() {
     } else {
       router.push('/login');
     }
+  };
+  
+  const handleExportCSV = () => {
+    const headers = ["ID", "Timestamp", "Item Name", "Action", "Details", "User"];
+    const csvRows = [
+      headers.join(','),
+      ...logEntries.map(log => [
+        log.id,
+        new Date(log.loggedAt).toLocaleString(),
+        log.itemName,
+        log.action,
+        `"${log.details?.replace(/"/g, '""') || ''}"`,
+        log.loggedBy
+      ].join(','))
+    ];
+    
+    const csvContent = "data:text/csv;charset=utf-8," + csvRows.join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "activity_log.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const getInitials = (displayName: string | null | undefined) => {
@@ -144,11 +169,11 @@ export default function MovementsPage() {
                 Locations
               </Link>
               <Link
-                href="/movements"
+                href="/activity"
                 className="flex items-center gap-3 rounded-lg bg-muted px-3 py-2 text-primary transition-all hover:text-primary"
               >
                 <History className="h-4 w-4" />
-                Movement Log
+                Activity Log
               </Link>
               <Link
                 href="#"
@@ -208,16 +233,20 @@ export default function MovementsPage() {
                   Locations
                 </Link>
                 <Link
-                  href="/movements"
+                  href="/activity"
                   className="mx-[-0.65rem] flex items-center gap-4 rounded-xl bg-muted px-3 py-2 text-foreground hover:text-foreground"
                 >
                   <History className="h-5 w-5" />
-                  Movement Log
+                  Activity Log
                 </Link>
               </nav>
             </SheetContent>
           </Sheet>
           <div className="w-full flex-1" />
+           <Button onClick={handleExportCSV} size="sm">
+            <Download className="mr-2 h-4 w-4" />
+            Export CSV
+          </Button>
            <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="secondary" size="icon" className="rounded-full">
@@ -250,13 +279,13 @@ export default function MovementsPage() {
         <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
             <Card>
             <CardHeader>
-                <CardTitle>Movement Log</CardTitle>
+                <CardTitle>Activity Log</CardTitle>
                 <CardDescription>
-                A log of all item movements within the system.
+                  A log of all item creations, updates, movements, and deletions.
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                <MovementLogTable movements={movements} />
+                <ActivityLogTable logEntries={logEntries} />
             </CardContent>
             </Card>
         </main>
@@ -266,31 +295,42 @@ export default function MovementsPage() {
 }
 
 
-function MovementLogTable({ movements }: { movements: Movement[] }) {
-  const formatDate = (date: Date) => new Intl.DateTimeFormat('en-US', {
+function ActivityLogTable({ logEntries }: { logEntries: LogEntry[] }) {
+  const formatDate = (date: string) => new Intl.DateTimeFormat('en-US', {
       year: 'numeric', month: 'short', day: 'numeric',
-      hour: '2-digit', minute: '2-digit',
-  }).format(date);
+      hour: '2-digit', minute: '2-digit', second: '2-digit'
+  }).format(new Date(date));
 
   return (
     <Table>
       <TableHeader>
         <TableRow>
+          <TableHead className="hidden sm:table-cell">Date</TableHead>
           <TableHead>Item</TableHead>
-          <TableHead>From</TableHead>
-          <TableHead>To</TableHead>
-          <TableHead className="hidden md:table-cell">Moved By</TableHead>
-          <TableHead>Date</TableHead>
+          <TableHead>Action</TableHead>
+          <TableHead>Details</TableHead>
+          <TableHead className="hidden md:table-cell">User</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
-        {movements.map((move) => (
-          <TableRow key={move.id}>
-            <TableCell className="font-medium">{move.itemName}</TableCell>
-            <TableCell>{move.fromLocation}</TableCell>
-            <TableCell>{move.toLocation}</TableCell>
-            <TableCell className="hidden md:table-cell">{move.movedBy}</TableCell>
-            <TableCell>{formatDate(new Date(move.movedAt))}</TableCell>
+        {logEntries.map((log) => (
+          <TableRow key={log.id}>
+             <TableCell className="hidden sm:table-cell">{formatDate(log.loggedAt)}</TableCell>
+            <TableCell className="font-medium">{log.itemName}</TableCell>
+            <TableCell>
+               <Badge 
+                  variant={
+                    log.action === 'Created' ? 'default' : 
+                    log.action === 'Updated' ? 'secondary' : 
+                    log.action === 'Moved' ? 'outline' : 
+                    'destructive'
+                  }
+                >
+                  {log.action}
+                </Badge>
+            </TableCell>
+            <TableCell>{log.details}</TableCell>
+            <TableCell className="hidden md:table-cell">{log.loggedBy}</TableCell>
           </TableRow>
         ))}
       </TableBody>

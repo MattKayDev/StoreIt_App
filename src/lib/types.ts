@@ -6,15 +6,20 @@ export interface Item {
   imageUrl?: string;
 }
 
-export interface Movement {
+export type LogAction = 'Created' | 'Updated' | 'Moved' | 'Deleted';
+
+export interface LogEntry {
   id: string;
   itemId: string;
   itemName: string;
-  fromLocation: string;
-  toLocation: string;
-  movedBy: string;
-  movedAt: string; // Stored as ISO string in DB
+  action: LogAction;
+  fromLocation?: string;
+  toLocation?: string;
+  details?: string;
+  loggedBy: string;
+  loggedAt: string; // Stored as ISO string in DB
 }
+
 
 export interface Location {
     id: string;

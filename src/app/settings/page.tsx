@@ -216,11 +216,11 @@ export default function SettingsPage() {
                 Locations
               </Link>
               <Link
-                href="/movements"
+                href="/activity"
                 className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
               >
                 <History className="h-4 w-4" />
-                Movement Log
+                Activity Log
               </Link>
             </nav>
           </div>
@@ -266,11 +266,11 @@ export default function SettingsPage() {
                   Locations
                 </Link>
                 <Link
-                  href="/movements"
+                  href="/activity"
                   className="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground"
                 >
                   <History className="h-5 w-5" />
-                  Movement Log
+                  Activity Log
                 </Link>
               </nav>
             </SheetContent>
