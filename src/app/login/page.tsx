@@ -51,21 +51,21 @@ export default function LoginPage() {
 
   const handleGoogleLogin = async () => {
     setIsLoading(true);
-    const { result, error } = await signInWithGoogle();
+    const { error } = await signInWithGoogle();
     if (error) {
        toast({
         title: "Login Failed",
         description: "Could not log in with Google. Please try again.",
         variant: "destructive",
       });
-       setIsLoading(false);
     } else {
-        toast({
-            title: "Success",
-            description: "Logged in successfully.",
-        });
-        router.push('/');
+      toast({
+          title: "Success",
+          description: "Logged in successfully.",
+      });
+      router.push('/');
     }
+    setIsLoading(false);
   }
 
   const handlePasswordReset = async () => {
@@ -149,7 +149,14 @@ export default function LoginPage() {
                 {isLoading ? 'Logging in...' : 'Login'}
               </Button>
               <Button type="button" variant="outline" className="w-full" onClick={handleGoogleLogin} disabled={isLoading}>
-                {isLoading ? 'Please wait...' : 'Login with Google'}
+                 {isLoading ? (
+                  'Please wait...'
+                ) : (
+                  <>
+                    <Icons.google className="mr-2 h-4 w-4" />
+                    Login with Google
+                  </>
+                )}
               </Button>
             </div>
           </form>
