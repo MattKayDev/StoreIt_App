@@ -5,14 +5,14 @@ import { getDatabase } from 'firebase/database';
 import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
-      apiKey: "your-api-key",
-      authDomain: "your-project-id.firebaseapp.com",
-      projectId: "your-project-id",
-      storageBucket: "your-project-id.appspot.com",
-      messagingSenderId: "your-sender-id",
-      appId: "your-app-id",
-      databaseURL: "https://your-project-id.firebaseio.com"
-    };
+  apiKey: "AIzaSyBtPwxAthwwA_EEKlh8kGDQ81ja6MTEotI",
+  authDomain: "inventrack-2hiqb.firebaseapp.com",
+  databaseURL: "https://inventrack-2hiqb-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "inventrack-2hiqb",
+  storageBucket: "inventrack-2hiqb.appspot.com",
+  messagingSenderId: "59110427809",
+  appId: "1:59110427809:web:586df6d05ea16fbc2634e0"
+};
 
 // Initialize Firebase
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
