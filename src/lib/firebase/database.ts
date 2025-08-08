@@ -1,6 +1,8 @@
+
 import { db } from './config';
 import { ref, push, get, set, remove, update } from 'firebase/database';
 import type { Item, Location, Movement } from '@/lib/types';
+import { auth } from './config';
 
 // Generic function to fetch data
 async function fetchData<T>(path: string): Promise<T[]> {
@@ -95,9 +97,10 @@ export const getMovements = () => fetchData<Movement>('movements');
 
 export async function createMovement(movementData: Omit<Movement, 'id' | 'movedAt' | 'movedBy'>) {
   try {
+    const currentUser = auth.currentUser;
     const newMovement: Omit<Movement, 'id'> = {
         ...movementData,
-        movedBy: "Admin User", // Placeholder, you might want to pass the current user
+        movedBy: currentUser?.displayName || currentUser?.email || "Anonymous",
         movedAt: new Date().toISOString()
     }
 

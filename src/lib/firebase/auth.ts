@@ -1,3 +1,4 @@
+
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -6,7 +7,9 @@ import {
   signInWithPopup,
   sendPasswordResetEmail,
   setPersistence,
-  browserLocalPersistence
+  browserLocalPersistence,
+  updateProfile,
+  updatePassword,
 } from 'firebase/auth';
 import { auth } from './config';
 
@@ -68,3 +71,37 @@ export async function logOut() {
 
     return { result, error };
 }
+
+export async function updateUserProfile(profileData: { displayName?: string; photoURL?: string | null }) {
+    let result = null, error = null;
+    if (!auth.currentUser) {
+        return { result, error: { message: "No user logged in." } };
+    }
+    try {
+        await updateProfile(auth.currentUser, {
+            displayName: profileData.displayName,
+            photoURL: profileData.photoURL
+        });
+        result = auth.currentUser;
+    } catch(e) {
+        error = e;
+    }
+    return { result, error };
+}
+
+
+export async function updateUserPassword(newPassword: string) {
+    let result = null, error = null;
+    if (!auth.currentUser) {
+        return { result, error: { message: "No user logged in." } };
+    }
+    try {
+        await updatePassword(auth.currentUser, newPassword);
+        result = true;
+    } catch(e) {
+        error = e;
+    }
+    return { result, error };
+}
+
+    

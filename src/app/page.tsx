@@ -78,8 +78,10 @@ import {
 import type { Item, Movement, Location } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { logOut } from '@/lib/firebase/auth';
+import { auth } from '@/lib/firebase/config';
 import { getItems, getLocations, createItem, createMovement, updateItem, deleteItem } from '@/lib/firebase/database';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { onAuthStateChanged } from 'firebase/auth';
 
 
 export default function Dashboard() {
@@ -88,6 +90,7 @@ export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isMounted, setIsMounted] = useState(false);
   const router = useRouter();
+  const [user, setUser] = useState<any>(null);
 
   // State for dialogs
   const [isCreateItemOpen, setCreateItemOpen] = useState(false);
@@ -96,6 +99,17 @@ export default function Dashboard() {
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
 
   const { toast } = useToast();
+
+   useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      if (currentUser) {
+        setUser(currentUser);
+      } else {
+        router.push('/login');
+      }
+    });
+    return () => unsubscribe();
+  }, [router]);
 
   const fetchData = async () => {
     const [itemsData, locationsData] = await Promise.all([
@@ -219,8 +233,17 @@ export default function Dashboard() {
         })
     }
   };
+  
+  const getInitials = (displayName: string | null | undefined) => {
+    if (!displayName) return 'U';
+    const names = displayName.split(' ');
+    if (names.length > 1) {
+      return names[0][0] + names[1][0];
+    }
+    return displayName[0];
+  };
 
-  if (!isMounted) {
+  if (!isMounted || !user) {
     return null; // or a loading spinner
   }
 
@@ -355,8 +378,8 @@ export default function Dashboard() {
             <DropdownMenuTrigger asChild>
               <Button variant="secondary" size="icon" className="rounded-full">
                 <Avatar>
-                  <AvatarImage src="https://i.pravatar.cc/150?u=a042581f4e29026704d" alt="Admin User" />
-                  <AvatarFallback>AU</AvatarFallback>
+                   <AvatarImage src={user.photoURL || undefined} alt={user.displayName || 'User'} />
+                  <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
                 </Avatar>
                 <span className="sr-only">Toggle user menu</span>
               </Button>
@@ -364,8 +387,7 @@ export default function Dashboard() {
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem disabled>Settings</DropdownMenuItem>
-              <DropdownMenuItem disabled>Support</DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => router.push('/settings')}>Settings</DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onSelect={handleLogout}>Logout</DropdownMenuItem>
             </DropdownMenuContent>

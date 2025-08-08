@@ -48,7 +48,9 @@ import type { Movement } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { logOut } from '@/lib/firebase/auth';
+import { auth } from '@/lib/firebase/config';
 import { getMovements } from '@/lib/firebase/database';
+import { onAuthStateChanged } from 'firebase/auth';
 
 
 export default function MovementsPage() {
@@ -56,6 +58,18 @@ export default function MovementsPage() {
   const [isMounted, setIsMounted] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      if (currentUser) {
+        setUser(currentUser);
+      } else {
+        router.push('/login');
+      }
+    });
+    return () => unsubscribe();
+  }, [router]);
 
   const fetchMovements = async () => {
     const movementsData = await getMovements();
@@ -80,7 +94,16 @@ export default function MovementsPage() {
     }
   };
 
-  if (!isMounted) {
+  const getInitials = (displayName: string | null | undefined) => {
+    if (!displayName) return 'U';
+    const names = displayName.split(' ');
+    if (names.length > 1) {
+      return names[0][0] + names[1][0];
+    }
+    return displayName[0];
+  };
+
+  if (!isMounted || !user) {
     return null; // or a loading spinner
   }
 
@@ -189,8 +212,8 @@ export default function MovementsPage() {
             <DropdownMenuTrigger asChild>
               <Button variant="secondary" size="icon" className="rounded-full">
                 <Avatar>
-                  <AvatarImage src="https://i.pravatar.cc/150?u=a042581f4e29026704d" alt="Admin User" />
-                  <AvatarFallback>AU</AvatarFallback>
+                  <AvatarImage src={user.photoURL || undefined} alt={user.displayName || 'User'} />
+                  <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
                 </Avatar>
                 <span className="sr-only">Toggle user menu</span>
               </Button>
@@ -198,8 +221,7 @@ export default function MovementsPage() {
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem disabled>Settings</DropdownMenuItem>
-              <DropdownMenuItem disabled>Support</DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => router.push('/settings')}>Settings</DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onSelect={handleLogout}>Logout</DropdownMenuItem>
             </DropdownMenuContent>

@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link'
@@ -16,7 +17,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Icons } from '@/components/icons'
 import { useToast } from '@/hooks/use-toast';
-import { signUp } from '@/lib/firebase/auth';
+import { signUp, updateUserProfile } from '@/lib/firebase/auth';
 
 
 export default function SignupPage() {
@@ -34,9 +35,8 @@ export default function SignupPage() {
 
     const { result, error } = await signUp(email, password);
     
-    setIsLoading(false);
-
     if (error) {
+      setIsLoading(false);
       return toast({
         title: "Signup Failed",
         description: (error as Error).message,
@@ -44,11 +44,24 @@ export default function SignupPage() {
       });
     }
 
-    // Redirect or show success message
-    toast({
-      title: "Account Created",
-      description: "You have successfully signed up!",
-    });
+    const displayName = `${firstName} ${lastName}`.trim();
+    const profileUpdate = await updateUserProfile({ displayName });
+
+    setIsLoading(false);
+    
+    if (profileUpdate.error) {
+        toast({
+            title: "Warning",
+            description: "Account was created, but display name could not be set.",
+            variant: "destructive"
+        })
+    } else {
+        toast({
+            title: "Account Created",
+            description: "You have successfully signed up!",
+        });
+    }
+    
     router.push('/');
   };
 
@@ -131,3 +144,5 @@ export default function SignupPage() {
     </div>
   )
 }
+
+    
