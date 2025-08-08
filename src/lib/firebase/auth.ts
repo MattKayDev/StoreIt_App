@@ -1,11 +1,12 @@
 import {
-  getAuth,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
   GoogleAuthProvider,
   signInWithPopup,
   sendPasswordResetEmail,
+  setPersistence,
+  browserLocalPersistence
 } from 'firebase/auth';
 import { auth } from './config';
 
@@ -39,6 +40,7 @@ export async function signInWithGoogle() {
   let result = null,
     error = null;
   try {
+    await setPersistence(auth, browserLocalPersistence);
     result = await signInWithPopup(auth, googleProvider);
   } catch (e) {
     error = e;
