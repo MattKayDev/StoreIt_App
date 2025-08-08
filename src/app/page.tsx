@@ -22,7 +22,10 @@ import {
   Camera,
   History,
   Menu,
+  Moon,
+  Sun,
 } from 'lucide-react';
+import { useTheme } from 'next-themes';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -40,6 +43,10 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuPortal,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import {
@@ -99,6 +106,8 @@ export default function Dashboard() {
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
 
   const { toast } = useToast();
+  const { setTheme } = useTheme();
+
 
    useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -390,6 +399,16 @@ export default function Dashboard() {
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem onSelect={() => router.push('/settings')}>Settings</DropdownMenuItem>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>Theme</DropdownMenuSubTrigger>
+                <DropdownMenuPortal>
+                    <DropdownMenuSubContent>
+                        <DropdownMenuItem onSelect={() => setTheme('light')}>Light</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => setTheme('dark')}>Dark</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => setTheme('system')}>System</DropdownMenuItem>
+                    </DropdownMenuSubContent>
+                </DropdownMenuPortal>
+              </DropdownMenuSub>
               <DropdownMenuSeparator />
               <DropdownMenuItem onSelect={handleLogout}>Logout</DropdownMenuItem>
             </DropdownMenuContent>
@@ -764,5 +783,3 @@ function MoveItemDialogContent({ item, onMove, locations }: { item: Item | null,
         </DialogContent>
     );
 }
-
-    

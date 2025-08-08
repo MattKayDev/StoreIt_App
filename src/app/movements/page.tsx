@@ -12,7 +12,10 @@ import {
   MapPin,
   History,
   Menu,
+  Moon,
+  Sun,
 } from 'lucide-react';
+import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -28,6 +31,10 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuPortal
 } from '@/components/ui/dropdown-menu';
 import {
   Table,
@@ -59,6 +66,7 @@ export default function MovementsPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [user, setUser] = useState<any>(null);
+  const { setTheme } = useTheme();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -224,6 +232,16 @@ export default function MovementsPage() {
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem onSelect={() => router.push('/settings')}>Settings</DropdownMenuItem>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>Theme</DropdownMenuSubTrigger>
+                <DropdownMenuPortal>
+                    <DropdownMenuSubContent>
+                        <DropdownMenuItem onSelect={() => setTheme('light')}>Light</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => setTheme('dark')}>Dark</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => setTheme('system')}>System</DropdownMenuItem>
+                    </DropdownMenuSubContent>
+                </DropdownMenuPortal>
+              </DropdownMenuSub>
               <DropdownMenuSeparator />
               <DropdownMenuItem onSelect={handleLogout}>Logout</DropdownMenuItem>
             </DropdownMenuContent>
@@ -279,5 +297,3 @@ function MovementLogTable({ movements }: { movements: Movement[] }) {
     </Table>
   );
 }
-
-    

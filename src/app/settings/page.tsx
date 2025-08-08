@@ -16,7 +16,10 @@ import {
   Upload,
   Camera,
   Trash2,
+  Moon,
+  Sun,
 } from 'lucide-react';
+import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -32,6 +35,10 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuPortal,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import {
@@ -65,6 +72,8 @@ export default function SettingsPage() {
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const { setTheme } = useTheme();
+
 
   useEffect(() => {
     setIsMounted(true);
@@ -281,6 +290,16 @@ export default function SettingsPage() {
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem onSelect={() => router.push('/settings')}>Settings</DropdownMenuItem>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>Theme</DropdownMenuSubTrigger>
+                <DropdownMenuPortal>
+                    <DropdownMenuSubContent>
+                        <DropdownMenuItem onSelect={() => setTheme('light')}>Light</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => setTheme('dark')}>Dark</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => setTheme('system')}>System</DropdownMenuItem>
+                    </DropdownMenuSubContent>
+                </DropdownMenuPortal>
+              </DropdownMenuSub>
               <DropdownMenuSeparator />
               <DropdownMenuItem onSelect={handleLogout}>Logout</DropdownMenuItem>
             </DropdownMenuContent>
@@ -375,5 +394,3 @@ export default function SettingsPage() {
     </div>
   );
 }
-
-    
