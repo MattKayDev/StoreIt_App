@@ -12,12 +12,10 @@ export interface Movement {
   fromLocation: string;
   toLocation: string;
   movedBy: string;
-  movedAt: Date;
+  movedAt: string; // Stored as ISO string in DB
 }
 
 export interface Location {
     id: string;
     name: string;
 }
-
-    

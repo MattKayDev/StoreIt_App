@@ -1,5 +1,6 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
+import { getDatabase } from 'firebase/database';
 
 const firebaseConfig = {
   projectId: "inventrack-2hiqb",
@@ -7,11 +8,13 @@ const firebaseConfig = {
   storageBucket: "inventrack-2hiqb.firebasestorage.app",
   apiKey: "AIzaSyBtPwxAthwwA_EEKlh8kGDQ81ja6MTEotI",
   authDomain: "inventrack-2hiqb.firebaseapp.com",
-  messagingSenderId: "59110427809"
+  messagingSenderId: "59110427809",
+  databaseURL: "https://inventrack-2hiqb-default-rtdb.firebaseio.com"
 };
 
 // Initialize Firebase
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
+const db = getDatabase(app);
 
-export { app, auth };
+export { app, auth, db };

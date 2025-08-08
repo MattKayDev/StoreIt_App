@@ -51,10 +51,11 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import type { Location } from '@/lib/types';
-import { mockLocations } from '@/data/mock-data';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { logOut } from '@/lib/firebase/auth';
+import { getLocations, createLocation, updateLocation, deleteLocation } from '@/lib/firebase/database';
+
 
 export default function LocationsPage() {
   const [locations, setLocations] = useState<Location[]>([]);
@@ -68,9 +69,14 @@ export default function LocationsPage() {
 
   const { toast } = useToast();
 
+  const fetchLocations = async () => {
+      const locationsData = await getLocations();
+      setLocations(locationsData);
+  }
+
   useEffect(() => {
     setIsMounted(true);
-    setLocations(mockLocations);
+    fetchLocations();
   }, []);
 
   const handleLogout = async () => {
@@ -90,37 +96,59 @@ export default function LocationsPage() {
     loc.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleCreateLocation = (name: string) => {
-    const newLocation: Location = {
-      id: `loc-${Date.now()}`,
-      name,
-    };
-    setLocations(prev => [newLocation, ...prev]);
-    toast({
-      title: 'Success!',
-      description: `Location "${name}" has been created.`,
-    });
-    setCreateLocationOpen(false);
+  const handleCreateLocation = async (name: string) => {
+    const newLocation = await createLocation({ name });
+    if(newLocation) {
+        setLocations(prev => [newLocation, ...prev]);
+        toast({
+          title: 'Success!',
+          description: `Location "${name}" has been created.`,
+        });
+        setCreateLocationOpen(false);
+    } else {
+        toast({
+            title: 'Error',
+            description: 'Failed to create location.',
+            variant: 'destructive'
+        });
+    }
   };
   
-  const handleEditLocation = (name: string) => {
+  const handleEditLocation = async (name: string) => {
     if (!selectedLocation) return;
-    setLocations(prev => prev.map(loc => loc.id === selectedLocation.id ? {...loc, name} : loc));
-    toast({
-      title: 'Success!',
-      description: `Location has been updated to "${name}".`,
-    });
-    setEditLocationOpen(false);
-    setSelectedLocation(null);
+    const success = await updateLocation(selectedLocation.id, { ...selectedLocation, name });
+    if(success) {
+        setLocations(prev => prev.map(loc => loc.id === selectedLocation.id ? {...loc, name} : loc));
+        toast({
+          title: 'Success!',
+          description: `Location has been updated to "${name}".`,
+        });
+        setEditLocationOpen(false);
+        setSelectedLocation(null);
+    } else {
+        toast({
+            title: 'Error',
+            description: 'Failed to update location.',
+            variant: 'destructive'
+        });
+    }
   };
 
-  const handleDeleteLocation = (locationId: string) => {
-    setLocations(prev => prev.filter(loc => loc.id !== locationId));
-    toast({
-      title: 'Location Deleted',
-      description: 'The location has been successfully deleted.',
-      variant: 'destructive'
-    });
+  const handleDeleteLocation = async (locationId: string) => {
+    const success = await deleteLocation(locationId);
+    if(success) {
+        setLocations(prev => prev.filter(loc => loc.id !== locationId));
+        toast({
+          title: 'Location Deleted',
+          description: 'The location has been successfully deleted.',
+        });
+    } else {
+        toast({
+          title: 'Error',
+          description: 'Failed to delete location.',
+          variant: 'destructive'
+        });
+    }
   };
 
   if (!isMounted) {
@@ -209,8 +237,8 @@ export default function LocationsPage() {
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Settings</DropdownMenuItem>
-              <DropdownMenuItem>Support</DropdownMenuItem>
+              <DropdownMenuItem disabled>Settings</DropdownMenuItem>
+              <DropdownMenuItem disabled>Support</DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onSelect={handleLogout}>Logout</DropdownMenuItem>
             </DropdownMenuContent>

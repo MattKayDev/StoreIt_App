@@ -6,14 +6,11 @@ import { useRouter } from 'next/navigation';
 import {
   ArrowRightLeft,
   LayoutDashboard,
-  LogOut,
   MoreHorizontal,
-  Package,
   Package2,
   PlusCircle,
   Search,
   Settings,
-  User,
   Warehouse,
   BarChart3,
   MapPin,
@@ -65,9 +62,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import type { Item, Movement, Location } from '@/lib/types';
-import { mockItems, mockMovements, mockLocations } from '@/data/mock-data';
 import { useToast } from '@/hooks/use-toast';
 import { logOut } from '@/lib/firebase/auth';
+import { getItems, getLocations, getMovements, createItem, createMovement } from '@/lib/firebase/database';
+
 
 export default function Dashboard() {
   const [items, setItems] = useState<Item[]>([]);
@@ -84,11 +82,20 @@ export default function Dashboard() {
 
   const { toast } = useToast();
 
+  const fetchData = async () => {
+    const [itemsData, movementsData, locationsData] = await Promise.all([
+        getItems(),
+        getMovements(),
+        getLocations(),
+    ]);
+    setItems(itemsData);
+    setMovements(movementsData.map(m => ({...m, movedAt: new Date(m.movedAt) })).sort((a,b) => b.movedAt.getTime() - a.movedAt.getTime()));
+    setLocations(locationsData);
+  }
+
   useEffect(() => {
     setIsMounted(true);
-    setItems(mockItems);
-    setMovements(mockMovements);
-    setLocations(mockLocations);
+    fetchData();
   }, []);
 
   const handleLogout = async () => {
@@ -109,49 +116,54 @@ export default function Dashboard() {
     return items.filter(
       (item) =>
         item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
         item.location.toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [items, searchQuery]);
 
-  const handleCreateItem = (newItemData: Omit<Item, 'id'>) => {
-    const newItem: Item = {
-      id: `item-${Date.now()}`,
-      ...newItemData,
-    };
-    setItems((prev) => [newItem, ...prev]);
-    toast({
-      title: 'Success!',
-      description: `Item "${newItem.name}" has been created.`,
-    });
-    setCreateItemOpen(false);
+  const handleCreateItem = async (newItemData: Omit<Item, 'id'>) => {
+    const newItem = await createItem(newItemData);
+    if(newItem) {
+        setItems((prev) => [newItem, ...prev]);
+        toast({
+          title: 'Success!',
+          description: `Item "${newItem.name}" has been created.`,
+        });
+        setCreateItemOpen(false);
+    } else {
+        toast({
+            title: 'Error',
+            description: 'Failed to create item.',
+            variant: 'destructive'
+        })
+    }
   };
 
-  const handleMoveItem = (newLocation: string) => {
+  const handleMoveItem = async (newLocation: string) => {
     if (!selectedItem) return;
 
-    const newMovement: Movement = {
-      id: `move-${Date.now()}`,
+    const newMovement = await createMovement({
       itemId: selectedItem.id,
       itemName: selectedItem.name,
       fromLocation: selectedItem.location,
       toLocation: newLocation,
-      movedBy: 'Admin User',
-      movedAt: new Date(),
-    };
-    
-    setMovements((prev) => [newMovement, ...prev]);
-    setItems((prev) =>
-      prev.map((item) =>
-        item.id === selectedItem.id ? { ...item, location: newLocation } : item
-      )
-    );
-    toast({
-      title: "Item Moved",
-      description: `"${selectedItem.name}" moved to ${newLocation}.`,
     });
-    setMoveItemOpen(false);
-    setSelectedItem(null);
+    
+    if(newMovement) {
+        fetchData(); // Refetch all data to ensure consistency
+        toast({
+          title: "Item Moved",
+          description: `"${selectedItem.name}" moved to ${newLocation}.`,
+        });
+        setMoveItemOpen(false);
+        setSelectedItem(null);
+    } else {
+         toast({
+            title: 'Error',
+            description: 'Failed to move item.',
+            variant: 'destructive'
+        })
+    }
   };
 
   if (!isMounted) {
@@ -255,8 +267,8 @@ export default function Dashboard() {
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Settings</DropdownMenuItem>
-              <DropdownMenuItem>Support</DropdownMenuItem>
+              <DropdownMenuItem disabled>Settings</DropdownMenuItem>
+              <DropdownMenuItem disabled>Support</DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onSelect={handleLogout}>Logout</DropdownMenuItem>
             </DropdownMenuContent>
@@ -328,8 +340,8 @@ function ItemCard({ item, onMoveClick }: { item: Item; onMoveClick: () => void }
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                <DropdownMenuItem>Edit</DropdownMenuItem>
-                <DropdownMenuItem>Delete</DropdownMenuItem>
+                <DropdownMenuItem disabled>Edit</DropdownMenuItem>
+                <DropdownMenuItem disabled>Delete</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
         </div>
@@ -370,7 +382,7 @@ function MovementLogTable({ movements }: { movements: Movement[] }) {
             <TableCell>{move.fromLocation}</TableCell>
             <TableCell>{move.toLocation}</TableCell>
             <TableCell className="hidden md:table-cell">{move.movedBy}</TableCell>
-            <TableCell>{formatDate(move.movedAt)}</TableCell>
+            <TableCell>{formatDate(new Date(move.movedAt))}</TableCell>
           </TableRow>
         ))}
       </TableBody>

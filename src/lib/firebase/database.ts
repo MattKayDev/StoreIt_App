@@ -1,0 +1,111 @@
+import { db } from './config';
+import { ref, push, get, set, remove } from 'firebase/database';
+import type { Item, Location, Movement } from '@/lib/types';
+
+// Generic function to fetch data
+async function fetchData<T>(path: string): Promise<T[]> {
+  try {
+    const snapshot = await get(ref(db, path));
+    if (snapshot.exists()) {
+      const data = snapshot.val();
+      return Object.keys(data).map(key => ({ ...data[key], id: key }));
+    }
+    return [];
+  } catch (error) {
+    console.error(`Error fetching ${path}:`, error);
+    return [];
+  }
+}
+
+// --- Item Functions ---
+export const getItems = () => fetchData<Item>('items');
+
+export async function createItem(itemData: Omit<Item, 'id'>) {
+  try {
+    const newItemRef = push(ref(db, 'items'));
+    await set(newItemRef, itemData);
+    return { ...itemData, id: newItemRef.key };
+  } catch (error) {
+    console.error("Error creating item:", error);
+    return null;
+  }
+}
+
+export async function updateItem(itemId: string, itemData: Partial<Item>) {
+    try {
+        await set(ref(db, `items/${itemId}`), itemData);
+        return true;
+    } catch (error) {
+        console.error("Error updating item:", error);
+        return false;
+    }
+}
+
+
+// --- Location Functions ---
+export const getLocations = () => fetchData<Location>('locations');
+
+export async function createLocation(locationData: Omit<Location, 'id'>) {
+  try {
+    const newLocationRef = push(ref(db, 'locations'));
+    await set(newLocationRef, locationData);
+    return { ...locationData, id: newLocationRef.key };
+  } catch (error) {
+    console.error("Error creating location:", error);
+    return null;
+  }
+}
+
+export async function updateLocation(locationId: string, locationData: Partial<Location>) {
+    try {
+        const locationRef = ref(db, `locations/${locationId}`);
+        const snapshot = await get(locationRef);
+        if(snapshot.exists()) {
+            await set(locationRef, { ...snapshot.val(), ...locationData});
+        }
+        return true;
+    } catch (error) {
+        console.error("Error updating location:", error);
+        return false;
+    }
+}
+
+export async function deleteLocation(locationId: string) {
+    try {
+        await remove(ref(db, `locations/${locationId}`));
+        return true;
+    } catch (error) {
+        console.error("Error deleting location:", error);
+        return false;
+    }
+}
+
+
+// --- Movement Functions ---
+export const getMovements = () => fetchData<Movement>('movements');
+
+export async function createMovement(movementData: Omit<Movement, 'id' | 'movedAt' | 'movedBy'>) {
+  try {
+    const newMovement: Omit<Movement, 'id'> = {
+        ...movementData,
+        movedBy: "Admin User", // Placeholder, you might want to pass the current user
+        movedAt: new Date().toISOString()
+    }
+
+    const newMovementRef = push(ref(db, 'movements'));
+    await set(newMovementRef, newMovement);
+
+    // Update item's location
+    const itemSnapshot = await get(ref(db, `items/${movementData.itemId}`));
+    if(itemSnapshot.exists()){
+       const item = itemSnapshot.val();
+       item.location = movementData.toLocation;
+       await set(ref(db, `items/${movementData.itemId}`), item);
+    }
+
+    return { ...newMovement, id: newMovementRef.key };
+  } catch (error) {
+    console.error("Error creating movement:", error);
+    return null;
+  }
+}
