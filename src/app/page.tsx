@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -18,9 +18,6 @@ import {
   MapPin,
   Trash2,
   FilePenLine,
-  Camera,
-  Upload,
-  X,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -68,12 +65,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import type { Item, Movement, Location } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { logOut } from '@/lib/firebase/auth';
 import { getItems, getLocations, getMovements, createItem, createMovement, updateItem, deleteItem } from '@/lib/firebase/database';
-import { uploadImage, deleteImage } from '@/lib/firebase/storage';
 
 
 export default function Dashboard() {
@@ -131,9 +126,8 @@ export default function Dashboard() {
     );
   }, [items, searchQuery]);
 
-  const handleCreateItem = async (newItemData: Omit<Item, 'id' | 'imageUrl'>, imageData: string | null) => {
-    let imageUrl = '';
-    const tempItem = await createItem({ ...newItemData, imageUrl: '' });
+  const handleCreateItem = async (newItemData: Omit<Item, 'id'>) => {
+    const tempItem = await createItem(newItemData);
 
     if(!tempItem) {
        toast({
@@ -142,16 +136,6 @@ export default function Dashboard() {
             variant: 'destructive'
         })
         return;
-    }
-
-    if (imageData) {
-        const uploadedUrl = await uploadImage(imageData, tempItem.id);
-        if (uploadedUrl) {
-            imageUrl = uploadedUrl;
-            await updateItem(tempItem.id, { imageUrl });
-        } else {
-            toast({ title: 'Warning', description: 'Item created, but image upload failed.' });
-        }
     }
     
     await fetchData();
@@ -162,24 +146,10 @@ export default function Dashboard() {
     setCreateItemOpen(false);
   };
 
-  const handleEditItem = async (itemData: Partial<Omit<Item, 'id'>>, imageData: string | null) => {
+  const handleEditItem = async (itemData: Partial<Omit<Item, 'id'>>) => {
     if (!selectedItem) return;
 
-    let newImageUrl = selectedItem.imageUrl;
-
-    if (imageData) { // New image is being uploaded
-        if (selectedItem.imageUrl && selectedItem.imageUrl.includes('firebasestorage')) {
-            await deleteImage(selectedItem.imageUrl);
-        }
-        const uploadedUrl = await uploadImage(imageData, selectedItem.id);
-        if(uploadedUrl) {
-            newImageUrl = uploadedUrl;
-        } else {
-             toast({ title: 'Warning', description: 'Image upload failed. Old image retained.' });
-        }
-    }
-
-    const success = await updateItem(selectedItem.id, {...itemData, imageUrl: newImageUrl});
+    const success = await updateItem(selectedItem.id, itemData);
     if (success) {
       await fetchData();
       toast({
@@ -492,22 +462,15 @@ function ItemDialogContent({
   toast,
 }: {
   item?: Item | null;
-  onCreate?: (data: Omit<Item, 'id' | 'imageUrl'>, imageData: string | null) => void;
-  onEdit?: (data: Partial<Omit<Item, 'id'>>, imageData: string | null) => void;
+  onCreate?: (data: Omit<Item, 'id'>) => void;
+  onEdit?: (data: Partial<Omit<Item, 'id'>>) => void;
   locations: Location[];
   toast: (args: any) => void;
 }) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
-  const [imageData, setImageData] = useState<string | null>(null);
-  const [currentImageUrl, setCurrentImageUrl] = useState<string | null>(null);
-
-  const [showCamera, setShowCamera] = useState(false);
-  const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [imageUrl, setImageUrl] = useState('');
 
   const isEditMode = !!item;
 
@@ -516,76 +479,15 @@ function ItemDialogContent({
       setName(item.name);
       setDescription(item.description);
       setLocation(item.location);
-      setCurrentImageUrl(item.imageUrl || null);
-      setImageData(null);
+      setImageUrl(item.imageUrl || '');
     } else {
         setName('');
         setDescription('');
         setLocation('');
-        setCurrentImageUrl(null);
-        setImageData(null);
+        setImageUrl('');
     }
   }, [item]);
-
-  useEffect(() => {
-    if (showCamera) {
-      const getCameraPermission = async () => {
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-          if (videoRef.current) {
-            videoRef.current.srcObject = stream;
-          }
-          setHasCameraPermission(true);
-        } catch (error) {
-          console.error('Error accessing camera:', error);
-          setHasCameraPermission(false);
-          toast({
-            variant: 'destructive',
-            title: 'Camera Access Denied',
-            description: 'Please enable camera permissions in your browser settings.',
-          });
-          setShowCamera(false);
-        }
-      };
-      getCameraPermission();
-    } else {
-        if (videoRef.current?.srcObject) {
-            const stream = videoRef.current.srcObject as MediaStream;
-            stream.getTracks().forEach(track => track.stop());
-            videoRef.current.srcObject = null;
-        }
-    }
-  }, [showCamera, toast]);
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImageData(reader.result as string);
-        setCurrentImageUrl(null);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
   
-  const handleCapture = () => {
-    if (videoRef.current && canvasRef.current) {
-        const video = videoRef.current;
-        const canvas = canvasRef.current;
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        const context = canvas.getContext('2d');
-        if(context) {
-            context.drawImage(video, 0, 0, canvas.width, canvas.height);
-            const dataUrl = canvas.toDataURL('image/jpeg');
-            setImageData(dataUrl);
-            setCurrentImageUrl(null);
-            setShowCamera(false);
-        }
-    }
-  }
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !location) {
@@ -597,17 +499,15 @@ function ItemDialogContent({
       return;
     }
 
-    const itemData = { name, description, location };
+    const itemData = { name, description, location, imageUrl };
 
     if (isEditMode && onEdit) {
-        onEdit(itemData, imageData);
+        onEdit(itemData);
     } else if (!isEditMode && onCreate) {
-        onCreate(itemData, imageData);
+        onCreate(itemData);
     }
   };
   
-  const imagePreviewUrl = imageData || currentImageUrl;
-
   return (
     <DialogContent className="sm:max-w-[425px]">
       <DialogHeader>
@@ -626,52 +526,9 @@ function ItemDialogContent({
             <Label htmlFor="description" className="text-right">Description</Label>
             <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} className="col-span-3" />
           </div>
-          <div className="grid grid-cols-4 items-start gap-4">
-            <Label htmlFor="location" className="text-right pt-2">Image</Label>
-            <div className="col-span-3">
-                 {imagePreviewUrl && !showCamera && (
-                    <div className="relative w-full h-40 mb-2">
-                        <Image src={imagePreviewUrl} alt="Item preview" layout="fill" objectFit="cover" className="rounded-md" />
-                        <Button variant="destructive" size="icon" className="absolute top-1 right-1 h-6 w-6" onClick={() => { setImageData(null); setCurrentImageUrl(null); }}>
-                            <X className="h-4 w-4" />
-                        </Button>
-                    </div>
-                )}
-                 {showCamera && (
-                    <div className="relative w-full mb-2">
-                        <video ref={videoRef} className="w-full aspect-video rounded-md" autoPlay muted playsInline />
-                         {hasCameraPermission === false && (
-                            <Alert variant="destructive">
-                                <AlertTitle>Camera Access Required</AlertTitle>
-                                <AlertDescription>
-                                Please allow camera access to use this feature.
-                                </AlertDescription>
-                            </Alert>
-                        )}
-                    </div>
-                 )}
-                
-                <div className="flex gap-2">
-                    {!showCamera && (
-                        <>
-                            <Button type="button" size="sm" variant="outline" onClick={() => fileInputRef.current?.click()}>
-                                <Upload className="mr-2 h-4 w-4" /> Upload
-                            </Button>
-                            <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
-                            <Button type="button" size="sm" variant="outline" onClick={() => setShowCamera(true)}>
-                                <Camera className="mr-2 h-4 w-4" /> Camera
-                            </Button>
-                        </>
-                    )}
-                    {showCamera && (
-                        <>
-                            <Button type="button" size="sm" onClick={handleCapture} disabled={!hasCameraPermission}>Take Picture</Button>
-                            <Button type="button" size="sm" variant="ghost" onClick={() => setShowCamera(false)}>Cancel</Button>
-                        </>
-                    )}
-                </div>
-                 <canvas ref={canvasRef} className="hidden"></canvas>
-            </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="imageUrl" className="text-right">Image URL</Label>
+            <Input id="imageUrl" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} className="col-span-3" placeholder="https://example.com/image.png" />
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="location" className="text-right">Location</Label>
@@ -750,3 +607,5 @@ function MoveItemDialogContent({ item, onMove, locations }: { item: Item | null,
         </DialogContent>
     );
 }
+
+    
