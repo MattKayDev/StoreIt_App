@@ -1,45 +1,41 @@
 {
   "rules": {
     "users": {
+      ".indexOn": "email",
       "$uid": {
         ".read": "$uid === auth.uid",
         ".write": "$uid === auth.uid"
       }
     },
     "items": {
+      ".indexOn": "ownerId",
       "$itemId": {
-        // Read access if you are the owner OR if the owner has shared with you
-        ".read": "data.child('ownerId').val() === auth.uid || root.child('shares').child(data.child('ownerId').val() + '_' + auth.uid).exists()",
-        // Write access only if you are the owner
-        ".write": "newData.child('ownerId').val() === auth.uid",
-        // Validate on create that ownerId is set to the user, and on update that it's not changed
+        ".read": "data.child('ownerId').val() === auth.uid || root.child('shares').orderByChild('shareeEmail').equalTo(auth.token.email).val().filter(s => s.sharerId === data.child('ownerId').val() && s.status === 'accepted').size > 0",
+        ".write": "data.exists() ? data.child('ownerId').val() === auth.uid : newData.child('ownerId').val() === auth.uid",
         ".validate": "newData.hasChildren(['name', 'description', 'location', 'imageUrl', 'ownerId']) && (data.exists() ? newData.child('ownerId').val() === data.child('ownerId').val() : newData.child('ownerId').val() === auth.uid)"
       }
     },
     "locations": {
+      ".indexOn": "ownerId",
       "$locationId": {
-         // Read access if you are the owner OR if the owner has shared with you
-        ".read": "data.child('ownerId').val() === auth.uid || root.child('shares').child(data.child('ownerId').val() + '_' + auth.uid).exists()",
-        // Write access only if you are the owner
-        ".write": "newData.child('ownerId').val() === auth.uid",
+        ".read": "data.child('ownerId').val() === auth.uid || root.child('shares').orderByChild('shareeEmail').equalTo(auth.token.email).val().filter(s => s.sharerId === data.child('ownerId').val() && s.status === 'accepted').size > 0",
+        ".write": "data.exists() ? data.child('ownerId').val() === auth.uid : newData.child('ownerId').val() === auth.uid",
         ".validate": "newData.hasChildren(['name', 'ownerId']) && (data.exists() ? newData.child('ownerId').val() === data.child('ownerId').val() : newData.child('ownerId').val() === auth.uid)"
       }
     },
     "activity": {
+      ".indexOn": "ownerId",
       "$logId": {
-         // Read access if you are the owner OR if the owner has shared with you
-        ".read": "data.child('ownerId').val() === auth.uid || root.child('shares').child(data.child('ownerId').val() + '_' + auth.uid).exists()",
-        // Append-only, and only the owner of the item can log activity for it
+        ".read": "data.child('ownerId').val() === auth.uid || root.child('shares').orderByChild('shareeEmail').equalTo(auth.token.email).val().filter(s => s.sharerId === data.child('ownerId').val() && s.status === 'accepted').size > 0",
         ".write": "!data.exists() && root.child('items').child(newData.child('itemId').val()).child('ownerId').val() === auth.uid",
         ".validate": "newData.hasChildren(['itemId', 'itemName', 'action', 'loggedBy', 'loggedAt', 'ownerId']) && newData.child('ownerId').val() === root.child('items').child(newData.child('itemId').val()).child('ownerId').val()"
       }
     },
     "shares": {
+      ".indexOn": ["sharerId", "shareeEmail"],
       "$shareId": {
-        // A user can read a share if they are the sharer or if the share is for their email
         ".read": "data.child('sharerId').val() === auth.uid || data.child('shareeEmail').val() === auth.token.email",
-        // Allow write if creating a new share for yourself OR if accepting a share
-        ".write": "(newData.child('sharerId').val() === auth.uid && !data.exists()) || (newData.child('status').val() === 'accepted' && data.child('shareeEmail').val() === auth.token.email)"
+        ".write": "(newData.child('sharerId').val() === auth.uid && !data.exists()) || (newData.child('status').val() === 'accepted' && data.child('shareeEmail').val() === auth.token.email) || (data.exists() && data.child('sharerId').val() === auth.uid)"
       }
     }
   }
