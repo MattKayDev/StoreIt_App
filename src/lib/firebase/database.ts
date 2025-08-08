@@ -59,10 +59,7 @@ export async function createLocation(locationData: Omit<Location, 'id'>) {
 export async function updateLocation(locationId: string, locationData: Partial<Location>) {
     try {
         const locationRef = ref(db, `locations/${locationId}`);
-        const snapshot = await get(locationRef);
-        if(snapshot.exists()) {
-            await set(locationRef, { ...snapshot.val(), ...locationData});
-        }
+        await set(locationRef, locationData);
         return true;
     } catch (error) {
         console.error("Error updating location:", error);

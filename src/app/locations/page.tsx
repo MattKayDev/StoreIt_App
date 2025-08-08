@@ -116,7 +116,8 @@ export default function LocationsPage() {
   
   const handleEditLocation = async (name: string) => {
     if (!selectedLocation) return;
-    const success = await updateLocation(selectedLocation.id, { ...selectedLocation, name });
+    const updatedLocationData = { ...selectedLocation, name };
+    const success = await updateLocation(selectedLocation.id, updatedLocationData);
     if(success) {
         setLocations(prev => prev.map(loc => loc.id === selectedLocation.id ? {...loc, name} : loc));
         toast({
