@@ -269,7 +269,7 @@ export default function SettingsPage() {
           <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
             <Link href="/" className="flex items-center gap-2 font-semibold">
               <Package2 className="h-6 w-6 text-primary" />
-              <span className="">InvenTrack</span>
+              <span className="">StoreIt App</span>
             </Link>
           </div>
           <div className="flex-1">
@@ -329,7 +329,7 @@ export default function SettingsPage() {
                   className="flex items-center gap-2 text-lg font-semibold"
                 >
                   <Package2 className="h-6 w-6 text-primary" />
-                  <span className="sr-only">InvenTrack</span>
+                  <span className="sr-only">StoreIt App</span>
                 </Link>
                 <Link
                   href="/"

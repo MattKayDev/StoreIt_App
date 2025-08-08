@@ -6,7 +6,7 @@ import { Toaster } from "@/components/ui/toaster"
 import { ThemeProvider } from '@/components/theme-provider';
 
 export const metadata: Metadata = {
-  title: 'InvenTrack',
+  title: 'StoreIt App',
   description: 'Your smart inventory solution.',
 };
 
