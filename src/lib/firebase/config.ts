@@ -4,13 +4,13 @@ import { getDatabase } from 'firebase/database';
 import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
-  projectId: "inventrack-2hiqb",
-  appId: "1:59110427809:web:586df6d05ea16fbc2634e0",
-  storageBucket: "inventrack-2hiqb.appspot.com",
-  apiKey: "AIzaSyBtPwxAthwwA_EEKlh8kGDQ81ja6MTEotI",
-  authDomain: "inventrack-2hiqb.firebaseapp.com",
-  messagingSenderId: "59110427809",
-  databaseURL: "https://inventrack-2hiqb-default-rtdb.europe-west1.firebasedatabase.app"
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL
 };
 
 // Initialize Firebase
