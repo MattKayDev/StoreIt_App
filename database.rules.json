@@ -1,42 +1,21 @@
 {
   "rules": {
+    ".read": "now < 1757199600000",
+    ".write": "now < 1757199600000",
     "users": {
-      ".indexOn": "email",
-      "$uid": {
-        ".read": "$uid === auth.uid",
-        ".write": "$uid === auth.uid"
-      }
+      ".indexOn": "email"
     },
     "items": {
-      ".indexOn": "ownerId",
-      "$itemId": {
-        ".read": "data.child('ownerId').val() === auth.uid || root.child('shares').orderByChild('shareeEmail').equalTo(auth.token.email).val() != null",
-        ".write": "data.exists() ? data.child('ownerId').val() === auth.uid : newData.child('ownerId').val() === auth.uid",
-        ".validate": "newData.hasChildren(['name', 'description', 'location', 'imageUrl', 'ownerId']) && (data.exists() ? newData.child('ownerId').val() === data.child('ownerId').val() : newData.child('ownerId').val() === auth.uid)"
-      }
+      ".indexOn": "ownerId"
     },
     "locations": {
-      ".indexOn": "ownerId",
-      "$locationId": {
-        ".read": "data.child('ownerId').val() === auth.uid || root.child('shares').orderByChild('shareeEmail').equalTo(auth.token.email).val() != null",
-        ".write": "data.exists() ? data.child('ownerId').val() === auth.uid : newData.child('ownerId').val() === auth.uid",
-        ".validate": "newData.hasChildren(['name', 'ownerId']) && (data.exists() ? newData.child('ownerId').val() === data.child('ownerId').val() : newData.child('ownerId').val() === auth.uid)"
-      }
+      ".indexOn": "ownerId"
     },
     "activity": {
-      ".indexOn": "ownerId",
-      "$logId": {
-        ".read": "data.child('ownerId').val() === auth.uid || root.child('shares').orderByChild('shareeEmail').equalTo(auth.token.email).val() != null",
-        ".write": "!data.exists() && root.child('items').child(newData.child('itemId').val()).child('ownerId').val() === auth.uid",
-        ".validate": "newData.hasChildren(['itemId', 'itemName', 'action', 'loggedBy', 'loggedAt', 'ownerId']) && newData.child('ownerId').val() === root.child('items').child(newData.child('itemId').val()).child('ownerId').val()"
-      }
+      ".indexOn": "ownerId"
     },
     "shares": {
-      ".indexOn": ["sharerId", "shareeEmail"],
-      "$shareId": {
-        ".read": "data.child('sharerId').val() === auth.uid || data.child('shareeEmail').val() === auth.token.email",
-        ".write": "(newData.child('sharerId').val() === auth.uid && !data.exists()) || (newData.child('status').val() === 'accepted' && data.child('shareeEmail').val() === auth.token.email) || (data.exists() && data.child('sharerId').val() === auth.uid)"
-      }
+      ".indexOn": ["sharerId", "shareeEmail"]
     }
   }
 }
