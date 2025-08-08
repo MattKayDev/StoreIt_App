@@ -1,4 +1,15 @@
-import type { Item, Movement } from '@/lib/types';
+import type { Item, Movement, Location } from '@/lib/types';
+
+export const mockLocations: Location[] = [
+  { id: 'loc-1', name: 'Warehouse A, Shelf 3' },
+  { id: 'loc-2', name: 'Office Storage, Cabinet 2' },
+  { id: 'loc-3', name: 'Warehouse B, Rack 1' },
+  { id: 'loc-4', name: 'Tech Hub, Desk 5' },
+  { id: 'loc-5', name: 'Conference Room Alpha' },
+  { id: 'loc-6', name: 'Warehouse A, Pallet 5' },
+  { id: 'loc-7', name: 'Office Storage, Cabinet 1' },
+  { id: 'loc-8', name: 'IT Closet' },
+];
 
 export const mockItems: Item[] = [
   {
@@ -89,3 +100,5 @@ export const mockMovements: Movement[] = [
     movedAt: new Date('2023-10-28T09:15:00Z'),
   },
 ];
+
+    

@@ -14,3 +14,10 @@ export interface Movement {
   movedBy: string;
   movedAt: Date;
 }
+
+export interface Location {
+    id: string;
+    name: string;
+}
+
+    

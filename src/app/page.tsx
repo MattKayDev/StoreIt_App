@@ -15,6 +15,7 @@ import {
   User,
   Warehouse,
   BarChart3,
+  MapPin,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -45,12 +46,6 @@ import {
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -61,14 +56,21 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import type { Item, Movement } from '@/lib/types';
-import { mockItems, mockMovements } from '@/data/mock-data';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import type { Item, Movement, Location } from '@/lib/types';
+import { mockItems, mockMovements, mockLocations } from '@/data/mock-data';
 import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
 
 export default function Dashboard() {
   const [items, setItems] = useState<Item[]>([]);
   const [movements, setMovements] = useState<Movement[]>([]);
+  const [locations, setLocations] = useState<Location[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isMounted, setIsMounted] = useState(false);
 
@@ -83,6 +85,7 @@ export default function Dashboard() {
     setIsMounted(true);
     setItems(mockItems);
     setMovements(mockMovements);
+    setLocations(mockLocations);
   }, []);
 
   const filteredItems = useMemo(() => {
@@ -152,11 +155,18 @@ export default function Dashboard() {
           <div className="flex-1">
             <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
               <Link
-                href="#"
+                href="/"
                 className="flex items-center gap-3 rounded-lg bg-muted px-3 py-2 text-primary transition-all hover:text-primary"
               >
                 <LayoutDashboard className="h-4 w-4" />
                 Dashboard
+              </Link>
+               <Link
+                href="/locations"
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
+              >
+                <MapPin className="h-4 w-4" />
+                Locations
               </Link>
               <Link
                 href="#"
@@ -214,7 +224,7 @@ export default function Dashboard() {
                 Add Item
               </Button>
             </DialogTrigger>
-            <CreateItemDialogContent onCreate={handleCreateItem} />
+            <CreateItemDialogContent onCreate={handleCreateItem} locations={locations} />
           </Dialog>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -275,7 +285,7 @@ export default function Dashboard() {
         </main>
       </div>
       <Dialog open={isMoveItemOpen} onOpenChange={setMoveItemOpen}>
-        <MoveItemDialogContent item={selectedItem} onMove={handleMoveItem} />
+        <MoveItemDialogContent item={selectedItem} onMove={handleMoveItem} locations={locations} />
       </Dialog>
     </div>
   );
@@ -352,7 +362,7 @@ function MovementLogTable({ movements }: { movements: Movement[] }) {
   );
 }
 
-function CreateItemDialogContent({ onCreate }: { onCreate: (data: Omit<Item, 'id'>) => void }) {
+function CreateItemDialogContent({ onCreate, locations }: { onCreate: (data: Omit<Item, 'id'>) => void; locations: Location[] }) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
@@ -361,7 +371,11 @@ function CreateItemDialogContent({ onCreate }: { onCreate: (data: Omit<Item, 'id
     e.preventDefault();
     if (!name || !location) {
       // Basic validation
-      alert('Name and Location are required.');
+      toast({
+        variant: "destructive",
+        title: "Validation Error",
+        description: "Name and Location are required.",
+      })
       return;
     }
     onCreate({ name, description, location });
@@ -391,7 +405,16 @@ function CreateItemDialogContent({ onCreate }: { onCreate: (data: Omit<Item, 'id
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="location" className="text-right">Location</Label>
-            <Input id="location" value={location} onChange={(e) => setLocation(e.target.value)} className="col-span-3" required/>
+            <Select onValueChange={setLocation} value={location}>
+                <SelectTrigger className="col-span-3">
+                    <SelectValue placeholder="Select a location" />
+                </SelectTrigger>
+                <SelectContent>
+                    {locations.map(loc => (
+                        <SelectItem key={loc.id} value={loc.name}>{loc.name}</SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
           </div>
         </div>
         <DialogFooter>
@@ -402,7 +425,7 @@ function CreateItemDialogContent({ onCreate }: { onCreate: (data: Omit<Item, 'id
   );
 }
 
-function MoveItemDialogContent({ item, onMove }: { item: Item | null, onMove: (newLocation: string) => void }) {
+function MoveItemDialogContent({ item, onMove, locations }: { item: Item | null, onMove: (newLocation: string) => void, locations: Location[] }) {
     const [newLocation, setNewLocation] = useState('');
 
     useEffect(() => {
@@ -414,7 +437,11 @@ function MoveItemDialogContent({ item, onMove }: { item: Item | null, onMove: (n
     const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
       if (!newLocation) {
-        alert('New location is required.');
+        toast({
+            variant: "destructive",
+            title: "Validation Error",
+            description: "New location is required.",
+        });
         return;
       }
       onMove(newLocation);
@@ -427,13 +454,22 @@ function MoveItemDialogContent({ item, onMove }: { item: Item | null, onMove: (n
             <DialogHeader>
                 <DialogTitle>Move "{item.name}"</DialogTitle>
                 <DialogDescription>
-                    Current location: {item.location}. Enter the new location for this item.
+                    Current location: {item.location}. Select the new location for this item.
                 </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit}>
                 <div className="py-4">
                     <Label htmlFor="new-location">New Location</Label>
-                    <Input id="new-location" value={newLocation} onChange={(e) => setNewLocation(e.target.value)} className="mt-2" required />
+                     <Select onValueChange={setNewLocation} value={newLocation}>
+                        <SelectTrigger id="new-location" className="mt-2">
+                            <SelectValue placeholder="Select a new location" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {locations.filter(loc => loc.name !== item.location).map(loc => (
+                                <SelectItem key={loc.id} value={loc.name}>{loc.name}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                 </div>
                 <DialogFooter>
                     <Button type="submit">Move Item</Button>
@@ -442,3 +478,5 @@ function MoveItemDialogContent({ item, onMove }: { item: Item | null, onMove: (n
         </DialogContent>
     );
 }
+
+    
