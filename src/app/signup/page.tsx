@@ -45,22 +45,14 @@ export default function SignupPage() {
     }
 
     const displayName = `${firstName} ${lastName}`.trim();
-    const profileUpdate = await updateUserProfile({ displayName });
-
-    setIsLoading(false);
-    
-    if (profileUpdate.error) {
-        toast({
-            title: "Warning",
-            description: "Account was created, but display name could not be set.",
-            variant: "destructive"
-        })
-    } else {
-        toast({
-            title: "Account Created",
-            description: "You have successfully signed up!",
-        });
+    if (displayName) {
+        await updateUserProfile({ displayName });
     }
+    
+    toast({
+        title: "Account Created",
+        description: "You have successfully signed up!",
+    });
     
     router.push('/');
   };
@@ -74,6 +66,7 @@ export default function SignupPage() {
         description: "Could not log in with Google. Please try again.",
         variant: "destructive",
       });
+      setIsLoading(false);
     } else {
         toast({
             title: "Success",
@@ -81,7 +74,6 @@ export default function SignupPage() {
         });
         router.push('/');
     }
-    setIsLoading(false);
   }
 
   return (

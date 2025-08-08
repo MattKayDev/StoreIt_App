@@ -58,6 +58,7 @@ export default function LoginPage() {
         description: "Could not log in with Google. Please try again.",
         variant: "destructive",
       });
+       setIsLoading(false);
     } else {
         toast({
             title: "Success",
@@ -65,7 +66,6 @@ export default function LoginPage() {
         });
         router.push('/');
     }
-    setIsLoading(false);
   }
 
   const handlePasswordReset = async () => {
