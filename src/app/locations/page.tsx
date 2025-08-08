@@ -100,8 +100,10 @@ export default function LocationsPage() {
 
   useEffect(() => {
     setIsMounted(true);
-    fetchLocations();
-  }, []);
+    if (user) {
+      fetchLocations();
+    }
+  }, [user]);
 
   const handleLogout = async () => {
     const { error } = await logOut();

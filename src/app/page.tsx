@@ -122,8 +122,10 @@ export default function Dashboard() {
 
   useEffect(() => {
     setIsMounted(true);
-    fetchData();
-  }, []);
+    if (user) {
+      fetchData();
+    }
+  }, [user]);
 
   const handleLogout = async () => {
     const { error } = await logOut();

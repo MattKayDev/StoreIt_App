@@ -78,8 +78,10 @@ export default function MovementsPage() {
 
   useEffect(() => {
     setIsMounted(true);
-    fetchMovements();
-  }, []);
+    if (user) {
+      fetchMovements();
+    }
+  }, [user]);
 
   const handleLogout = async () => {
     const { error } = await logOut();
