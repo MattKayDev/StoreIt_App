@@ -1,0 +1,38 @@
+{
+  "rules": {
+    // Default to denying all access unless specific rules below grant it.
+    ".read": false,
+    ".write": false,
+    "items": {
+      // Any authenticated user can read the list of items.
+      ".read": "auth != null",
+      "$itemId": {
+        // Any authenticated user can write (create/update/delete) an item.
+        ".write": "auth != null",
+        // Validate the data being written for a new or updated item.
+        ".validate": "newData.hasChildren(['name', 'description', 'location', 'imageUrl']) && newData.child('name').isString() && newData.child('name').val().length > 0 && newData.child('description').isString() && newData.child('location').isString() && newData.child('location').val().length > 0 && newData.child('imageUrl').isString()"
+      }
+    },
+    "locations": {
+      // Any authenticated user can read the list of locations.
+      ".read": "auth != null",
+      "$locationId": {
+        // Any authenticated user can write (create/update/delete) a location.
+        ".write": "auth != null",
+        // Validate the data for a new or updated location.
+        ".validate": "newData.hasChild('name') && newData.child('name').isString() && newData.child('name').val().length > 0"
+      }
+    },
+    "movements": {
+      // Any authenticated user can read the movement log.
+      ".read": "auth != null",
+      "$movementId": {
+        // Only authenticated users can create new movement entries.
+        // We prevent movements from being updated or deleted to preserve the audit trail.
+        ".write": "auth != null && !data.exists()",
+        // Validate the data for a new movement.
+        ".validate": "newData.hasChildren(['itemId', 'itemName', 'fromLocation', 'toLocation', 'movedBy', 'movedAt']) && newData.child('movedBy').val() === auth.token.name"
+      }
+    }
+  }
+}
