@@ -103,5 +103,3 @@ export async function updateUserPassword(newPassword: string) {
     }
     return { result, error };
 }
-
-    

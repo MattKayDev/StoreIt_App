@@ -17,7 +17,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Icons } from '@/components/icons'
 import { useToast } from '@/hooks/use-toast';
-import { signUp, updateUserProfile } from '@/lib/firebase/auth';
+import { signUp, updateUserProfile, signInWithGoogle } from '@/lib/firebase/auth';
 
 
 export default function SignupPage() {
@@ -45,26 +45,36 @@ export default function SignupPage() {
     }
 
     const displayName = `${firstName} ${lastName}`.trim();
-    const profileUpdate = await updateUserProfile({ displayName });
-
-    setIsLoading(false);
-    
-    if (profileUpdate.error) {
-        toast({
-            title: "Warning",
-            description: "Account was created, but display name could not be set.",
-            variant: "destructive"
-        })
-    } else {
-        toast({
-            title: "Account Created",
-            description: "You have successfully signed up!",
-        });
+    if (displayName) {
+        await updateUserProfile({ displayName });
     }
+    
+    toast({
+        title: "Account Created",
+        description: "You have successfully signed up!",
+    });
     
     router.push('/');
   };
 
+  const handleGoogleLogin = async () => {
+    setIsLoading(true);
+    const { error } = await signInWithGoogle();
+    if (error) {
+       toast({
+        title: "Login Failed",
+        description: "Could not log in with Google. Please try again.",
+        variant: "destructive",
+      });
+    } else {
+        toast({
+            title: "Success",
+            description: "Logged in successfully.",
+        });
+        router.push('/');
+    }
+    setIsLoading(false);
+  }
 
   return (
     <div className="flex min-h-screen w-full items-center justify-center bg-muted/40 p-4 font-body">
@@ -131,6 +141,26 @@ export default function SignupPage() {
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? 'Creating Account...' : 'Create account'}
               </Button>
+              <div className="relative my-2">
+                <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">
+                    Or continue with
+                    </span>
+                </div>
+              </div>
+              <Button type="button" variant="outline" className="w-full" onClick={handleGoogleLogin} disabled={isLoading}>
+                 {isLoading ? (
+                  'Please wait...'
+                ) : (
+                  <>
+                    <Icons.google className="mr-2 h-4 w-4" />
+                    Login with Google
+                  </>
+                )}
+              </Button>
             </div>
           </form>
           <div className="mt-4 text-center text-sm">
@@ -144,5 +174,3 @@ export default function SignupPage() {
     </div>
   )
 }
-
-    

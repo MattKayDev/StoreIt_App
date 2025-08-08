@@ -4,25 +4,15 @@ import { getAuth } from 'firebase/auth';
 import { getDatabase } from 'firebase/database';
 import { getStorage } from 'firebase/storage';
 
-const firebaseConfig = process.env.NEXT_PUBLIC_FIREBASE_API_KEY
-  ? {
-      apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-      authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-      storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-      messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-      appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-      databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL
-    }
-  : {
-      apiKey: "AIzaSyAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-      authDomain: "your-project-id.firebaseapp.com",
-      projectId: "your-project-id",
-      storageBucket: "your-project-id.appspot.com",
-      messagingSenderId: "1234567890",
-      appId: "1:1234567890:web:a1b2c3d4e5f6a7b8c9d0e1",
-      databaseURL: "https://your-project-id.firebaseio.com"
-    };
+const firebaseConfig = {
+  apiKey: "AIzaSyBtPwxAthwwA_EEKlh8kGDQ81ja6MTEotI",
+  authDomain: "inventrack-2hiqb.firebaseapp.com",
+  databaseURL: "https://inventrack-2hiqb-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "inventrack-2hiqb",
+  storageBucket: "inventrack-2hiqb.appspot.com",
+  messagingSenderId: "59110427809",
+  appId: "1:59110427809:web:586df6d05ea16fbc2634e0"
+};
 
 // Initialize Firebase
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();

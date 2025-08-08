@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link'
@@ -50,7 +51,7 @@ export default function LoginPage() {
 
   const handleGoogleLogin = async () => {
     setIsLoading(true);
-    const { result, error } = await signInWithGoogle();
+    const { error } = await signInWithGoogle();
     if (error) {
        toast({
         title: "Login Failed",
@@ -58,11 +59,11 @@ export default function LoginPage() {
         variant: "destructive",
       });
     } else {
-        toast({
-            title: "Success",
-            description: "Logged in successfully.",
-        });
-        router.push('/');
+      toast({
+          title: "Success",
+          description: "Logged in successfully.",
+      });
+      router.push('/');
     }
     setIsLoading(false);
   }
@@ -147,8 +148,15 @@ export default function LoginPage() {
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? 'Logging in...' : 'Login'}
               </Button>
-              <Button variant="outline" className="w-full hidden" onClick={handleGoogleLogin} disabled={isLoading}>
-                {isLoading ? 'Please wait...' : 'Login with Google'}
+              <Button type="button" variant="outline" className="w-full" onClick={handleGoogleLogin} disabled={isLoading}>
+                 {isLoading ? (
+                  'Please wait...'
+                ) : (
+                  <>
+                    <Icons.google className="mr-2 h-4 w-4" />
+                    Login with Google
+                  </>
+                )}
               </Button>
             </div>
           </form>

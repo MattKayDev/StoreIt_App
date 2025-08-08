@@ -4,8 +4,8 @@ import { cn } from '@/lib/utils';
 import { Toaster } from "@/components/ui/toaster"
 
 export const metadata: Metadata = {
-  title: 'InvenTrack',
-  description: 'Track your inventory with ease.',
+  title: 'StoreIt App',
+  description: 'Your smart inventory solution.',
 };
 
 export default function RootLayout({
