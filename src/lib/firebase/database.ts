@@ -335,8 +335,12 @@ export async function createShare(shareeEmail: string): Promise<Share | null> {
     const usersRef = ref(db, 'users');
     const q = query(usersRef, orderByChild('email'), equalTo(shareeEmail));
     const userSnapshot = await get(q);
-    // Note: This check for user existence via email is not directly possible with default rules.
-    // A better approach involves a cloud function to look up users. For now, we assume email is valid.
+    if (!userSnapshot.exists()) {
+        console.error("Attempted to share with a non-existent user.");
+        // To provide better feedback, you might want to handle this case in the UI.
+        // For now, we'll prevent the share from being created.
+        return null;
+    }
 
     const newShare: Omit<Share, 'id'> = {
         sharerId: currentUser.uid,
@@ -444,3 +448,5 @@ export async function saveUserEmail(user: any) {
         console.error("Error saving user email", error);
     }
 }
+
+    
