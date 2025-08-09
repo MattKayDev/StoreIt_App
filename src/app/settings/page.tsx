@@ -22,6 +22,7 @@ import {
   X,
   Send,
   Github,
+  Mail,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
@@ -141,6 +142,14 @@ export default function SettingsPage() {
       setUser({ ...auth.currentUser });
     }
   };
+  
+  const handleInvite = () => {
+    const subject = encodeURIComponent("Check out StoreIt App!");
+    const body = encodeURIComponent(
+      `Hey!\n\nI'm using this app called StoreIt to manage my inventory and thought you might like it. It helps you keep track of all your stuff, where it is, and who moves it.\n\nCheck it out here: ${window.location.origin}\n\nBest,\n${displayName || 'A friend'}`
+    );
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+  };
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -223,7 +232,7 @@ export default function SettingsPage() {
         }
         const result = await createShare(shareEmail);
         if (result) {
-            toast({ title: "Invitation Sent", description: `An invitation has been sent to ${shareEmail}.` });
+            toast({ title: "Invitation Sent", description: `An invitation to access your items has been sent to ${shareEmail}.` });
             setShareEmail('');
             fetchShares(user);
         } else {
@@ -395,12 +404,12 @@ export default function SettingsPage() {
             </DropdownMenuContent>
           </DropdownMenu>
         </header>
-        <main className="flex flex-1 flex-col gap-4 p-2 sm:p-4 lg:gap-6 lg:p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                  <Card>
                     <CardHeader>
                         <CardTitle>Manage Sharing</CardTitle>
-                        <CardDescription>Share your items and locations with other users or manage pending invitations.</CardDescription>
+                        <CardDescription>Share access to your items and locations with other users or manage pending invitations.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
                         {pendingShares.length > 0 && (
@@ -510,6 +519,19 @@ export default function SettingsPage() {
                 </Card>
                 <Card>
                     <CardHeader>
+                        <CardTitle>Invite a Friend</CardTitle>
+                        <CardDescription>
+                            Know someone who would love this app? Send them an email invitation to check it out.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Button onClick={handleInvite}>
+                            <Mail className="mr-2 h-4 w-4" /> Invite by Email
+                        </Button>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader>
                         <CardTitle>Feedback & Feature Requests</CardTitle>
                         <CardDescription>It will open GitHub page and GitHub account will be required to report a bug or feature</CardDescription>
                     </CardHeader>
@@ -593,3 +615,6 @@ function FeedbackForm() {
         </form>
     )
 }
+
+
+    
