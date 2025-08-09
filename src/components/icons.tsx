@@ -13,13 +13,9 @@ export const Icons = {
       strokeLinejoin="round"
       {...props}
     >
-      <path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v2" />
-      <path d="M21 14v2a2 2 0 0 1-1 1.73l-7 4a2 2 0 0 1-2 0l-7-4A2 2 0 0 1 3 16v-2" />
-      <path d="M3 12v.01" />
-      <path d="M12 12v.01" />
-      <path d="M21 12v.01" />
-      <path d="m3.45 10.12 7.07-4.02a2 2 0 0 1 1.96 0l7.07 4.02" />
-      <path d="m20.55 13.88-7.07 4.02a2 2 0 0 1-1.96 0l-7.07-4.02" />
+        <path d="M3 9h18v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9Z"/>
+        <path d="m3 9 2.45-4.9A2 2 0 0 1 7.24 3h9.52a2 2 0 0 1 1.8 1.1L21 9"/>
+        <path d="M12 3v6"/>
     </svg>
   ),
   google: (props: SVGProps<SVGSVGElement>) => (
