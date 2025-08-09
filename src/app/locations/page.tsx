@@ -7,7 +7,6 @@ import { useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
   MoreHorizontal,
-  Package2,
   PlusCircle,
   Search,
   Settings,
@@ -73,6 +72,7 @@ import { logOut } from '@/lib/firebase/auth';
 import { auth } from '@/lib/firebase/config';
 import { getLocations, createLocation, updateLocation, deleteLocation } from '@/lib/firebase/database';
 import { onAuthStateChanged } from 'firebase/auth';
+import { Icons } from '@/components/icons';
 
 
 export default function LocationsPage() {
@@ -205,7 +205,7 @@ export default function LocationsPage() {
         <div className="flex h-full max-h-screen flex-col gap-2">
           <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
             <Link href="/" className="flex items-center gap-2 font-semibold">
-              <Package2 className="h-6 w-6 text-primary" />
+              <Icons.logo className="h-6 w-6" />
               <span className="">StoreIt App</span>
             </Link>
           </div>
@@ -265,7 +265,7 @@ export default function LocationsPage() {
                   href="/"
                   className="flex items-center gap-2 text-lg font-semibold"
                 >
-                  <Package2 className="h-6 w-6 text-primary" />
+                  <Icons.logo className="h-6 w-6" />
                   <span className="sr-only">StoreIt App</span>
                 </Link>
                 <Link

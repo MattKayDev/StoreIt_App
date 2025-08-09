@@ -8,7 +8,6 @@ import { useRouter } from 'next/navigation';
 import { onAuthStateChanged } from 'firebase/auth';
 import {
   LayoutDashboard,
-  Package2,
   Settings,
   History,
   MapPin,
@@ -62,6 +61,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import type { Share } from '@/lib/types';
 import { createShare, getMyShares, getPendingShares, acceptShare, declineShare, deleteShare } from '@/lib/firebase/database';
 import { Badge } from '@/components/ui/badge';
+import { Icons } from '@/components/icons';
 
 
 export default function SettingsPage() {
@@ -268,7 +268,7 @@ export default function SettingsPage() {
         <div className="flex h-full max-h-screen flex-col gap-2">
           <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
             <Link href="/" className="flex items-center gap-2 font-semibold">
-              <Package2 className="h-6 w-6 text-primary" />
+              <Icons.logo className="h-6 w-6" />
               <span className="">StoreIt App</span>
             </Link>
           </div>
@@ -328,7 +328,7 @@ export default function SettingsPage() {
                   href="/"
                   className="flex items-center gap-2 text-lg font-semibold"
                 >
-                  <Package2 className="h-6 w-6 text-primary" />
+                  <Icons.logo className="h-6 w-6" />
                   <span className="sr-only">StoreIt App</span>
                 </Link>
                 <Link

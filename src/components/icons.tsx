@@ -3,23 +3,20 @@ import type { SVGProps } from "react";
 
 export const Icons = {
   logo: (props: SVGProps<SVGSVGElement>) => (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
+     <svg
+      width="24"
+      height="24"
       viewBox="0 0 24 24"
       fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
+      xmlns="http://www.w3.org/2000/svg"
       {...props}
     >
-      <path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v2" />
-      <path d="M21 14v2a2 2 0 0 1-1 1.73l-7 4a2 2 0 0 1-2 0l-7-4A2 2 0 0 1 3 16v-2" />
-      <path d="M3 12v.01" />
-      <path d="M12 12v.01" />
-      <path d="M21 12v.01" />
-      <path d="m3.45 10.12 7.07-4.02a2 2 0 0 1 1.96 0l7.07 4.02" />
-      <path d="m20.55 13.88-7.07 4.02a2 2 0 0 1-1.96 0l-7.07-4.02" />
+        <rect width="24" height="24" rx="4" fill="#4B0082"/>
+        <g transform="scale(0.8) translate(3, 3)">
+          <path d="M3 9H21V19C21 20.1046 20.1046 21 19 21H5C3.89543 21 3 20.1046 3 19V9Z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M3 9L5.45 4.1C5.78658 3.42273 6.48074 3 7.24001 3H16.76C17.5193 3 18.2134 3.42273 18.55 4.1L21 9" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M12 3V9" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        </g>
     </svg>
   ),
   google: (props: SVGProps<SVGSVGElement>) => (

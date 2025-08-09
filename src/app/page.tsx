@@ -9,7 +9,6 @@ import {
   ArrowRightLeft,
   LayoutDashboard,
   MoreHorizontal,
-  Package2,
   PlusCircle,
   Search,
   Settings,
@@ -89,6 +88,7 @@ import { auth } from '@/lib/firebase/config';
 import { getItems, getLocations, createItem, createMovement, updateItem, deleteItem } from '@/lib/firebase/database';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { onAuthStateChanged } from 'firebase/auth';
+import { Icons } from '@/components/icons';
 
 
 export default function Dashboard() {
@@ -264,7 +264,7 @@ export default function Dashboard() {
         <div className="flex h-full max-h-screen flex-col gap-2">
           <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
             <Link href="/" className="flex items-center gap-2 font-semibold">
-              <Package2 className="h-6 w-6 text-primary" />
+              <Icons.logo className="h-6 w-6" />
               <span className="">StoreIt App</span>
             </Link>
           </div>
@@ -324,7 +324,7 @@ export default function Dashboard() {
                   href="/"
                   className="flex items-center gap-2 text-lg font-semibold"
                 >
-                  <Package2 className="h-6 w-6 text-primary" />
+                  <Icons.logo className="h-6 w-6" />
                   <span className="sr-only">StoreIt App</span>
                 </Link>
                 <Link
