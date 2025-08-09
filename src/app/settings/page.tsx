@@ -21,6 +21,7 @@ import {
   Check,
   X,
   Send,
+  Github,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
@@ -62,6 +63,8 @@ import type { Share } from '@/lib/types';
 import { createShare, getMyShares, getPendingShares, acceptShare, declineShare, deleteShare } from '@/lib/firebase/database';
 import { Badge } from '@/components/ui/badge';
 import { Icons } from '@/components/icons';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Textarea } from '@/components/ui/textarea';
 
 
 export default function SettingsPage() {
@@ -392,7 +395,7 @@ export default function SettingsPage() {
             </DropdownMenuContent>
           </DropdownMenu>
         </header>
-        <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                  <Card>
                     <CardHeader>
@@ -505,6 +508,15 @@ export default function SettingsPage() {
                         </form>
                     </CardContent>
                 </Card>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Feedback & Feature Requests</CardTitle>
+                        <CardDescription>It will open GitHub page and GitHub account will be required to report a bug or feature</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <FeedbackForm />
+                    </CardContent>
+                </Card>
             </div>
         </main>
       </div>
@@ -533,6 +545,53 @@ export default function SettingsPage() {
       </Dialog>
     </div>
   );
+}
+
+function FeedbackForm() {
+    const [title, setTitle] = useState('');
+    const [description, setDescription] = useState('');
+    const [type, setType] = useState<'bug' | 'feature'>('feature');
+
+    const handleGitHubSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        const repoUrl = 'https://github.com/MattKayDev/StoreIt_App';
+        const label = type === 'bug' ? 'bug' : 'enhancement';
+        const encodedTitle = encodeURIComponent(title);
+        const encodedBody = encodeURIComponent(description);
+        const issueUrl = `${repoUrl}/issues/new?title=${encodedTitle}&body=${encodedBody}&labels=${label}`;
+        
+        window.open(issueUrl, '_blank');
+    };
+
+    return (
+        <form onSubmit={handleGitHubSubmit} className="space-y-4">
+            <div className="space-y-2">
+                <Label>Feedback Type</Label>
+                <RadioGroup defaultValue="feature" onValueChange={(value: 'bug' | 'feature') => setType(value)}>
+                    <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="feature" id="r1" />
+                        <Label htmlFor="r1">Feature Request</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="bug" id="r2" />
+                        <Label htmlFor="r2">Bug Report</Label>
+                    </div>
+                </RadioGroup>
+            </div>
+            <div className="space-y-2">
+                <Label htmlFor="feedback-title">Title</Label>
+                <Input id="feedback-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g., Add barcode scanning" required />
+            </div>
+            <div className="space-y-2">
+                <Label htmlFor="feedback-description">Description</Label>
+                <Textarea id="feedback-description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Describe the feature or bug in detail." required />
+            </div>
+            <Button type="submit">
+                <Github className="mr-2 h-4 w-4" />
+                Create Issue on GitHub
+            </Button>
+        </form>
+    )
 }
 
     
