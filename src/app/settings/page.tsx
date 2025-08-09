@@ -15,6 +15,8 @@ import {
   Upload,
   Camera,
   Trash2,
+  Moon,
+  Sun,
   Share2,
   Check,
   X,

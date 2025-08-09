@@ -20,6 +20,8 @@ import {
   Camera,
   History,
   Menu,
+  Moon,
+  Sun,
   Share2,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
