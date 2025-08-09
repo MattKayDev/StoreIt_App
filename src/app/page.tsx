@@ -374,9 +374,9 @@ export default function Dashboard() {
           </div>
            <Dialog open={isCreateItemOpen} onOpenChange={setCreateItemOpen}>
             <DialogTrigger asChild>
-              <Button size="sm" className="gap-1">
-                <PlusCircle className="h-4 w-4" />
-                Add Item
+              <Button size="sm" className="relative">
+                <PlusCircle className="h-4 w-4 md:mr-2" />
+                <span className="hidden md:inline">Add Item</span>
               </Button>
             </DialogTrigger>
             <ItemDialogContent 
