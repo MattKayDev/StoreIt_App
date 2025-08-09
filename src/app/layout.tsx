@@ -8,6 +8,7 @@ import { ThemeProvider } from '@/components/theme-provider';
 export const metadata: Metadata = {
   title: 'StoreIt App',
   description: 'Your smart inventory solution.',
+  manifest: '/manifest.json',
 };
 
 export default function RootLayout({
