@@ -1,5 +1,4 @@
-l # Firebase Studio
+# StoreIt App
 
-This is a NextJS starter in Firebase Studio.
-
-To get started, take a look at src/app/page.tsx.
+This is an app which allows for keeping  track of your items within the locations you have. You can also share your entire list with friends.
+This app is created using NextJS with the Firebase Studio.
