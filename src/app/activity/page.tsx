@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
-  Package2,
   Settings,
   MapPin,
   History,
@@ -57,6 +56,7 @@ import { auth } from '@/lib/firebase/config';
 import { getActivityLog } from '@/lib/firebase/database';
 import { onAuthStateChanged } from 'firebase/auth';
 import { Badge } from '@/components/ui/badge';
+import { Icons } from '@/components/icons';
 
 
 export default function ActivityPage() {
@@ -145,7 +145,7 @@ export default function ActivityPage() {
         <div className="flex h-full max-h-screen flex-col gap-2">
           <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
             <Link href="/" className="flex items-center gap-2 font-semibold">
-              <Package2 className="h-6 w-6 text-primary" />
+              <Icons.logo className="h-6 w-6" />
               <span className="">StoreIt App</span>
             </Link>
           </div>
@@ -205,7 +205,7 @@ export default function ActivityPage() {
                   href="/"
                   className="flex items-center gap-2 text-lg font-semibold"
                 >
-                  <Package2 className="h-6 w-6 text-primary" />
+                  <Icons.logo className="h-6 w-6" />
                   <span className="sr-only">StoreIt App</span>
                 </Link>
                 <Link
