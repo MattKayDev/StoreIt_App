@@ -511,7 +511,7 @@ export default function SettingsPage() {
                 <Card>
                     <CardHeader>
                         <CardTitle>Feedback & Feature Requests</CardTitle>
-                        <CardDescription>Have an idea or found a bug? Let us know!</CardDescription>
+                        <CardDescription>It will open GitHub page and GitHub account will be required to report a bug or feature</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <FeedbackForm />
@@ -593,5 +593,7 @@ function FeedbackForm() {
         </form>
     )
 }
+
+    
 
     
