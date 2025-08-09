@@ -393,7 +393,7 @@ export default function SettingsPage() {
           </DropdownMenu>
         </header>
         <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-            <div className="grid gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                  <Card>
                     <CardHeader>
                         <CardTitle>Manage Sharing</CardTitle>
@@ -463,15 +463,18 @@ export default function SettingsPage() {
                                         <AvatarFallback>{getInitials(displayName)}</AvatarFallback>
                                     </Avatar>
                                     <div className="flex gap-2">
-                                        <Button type="button" variant="outline" size="sm" onClick={() => document.getElementById('photo-upload')?.click()}>
-                                            <Upload className="mr-2 h-4 w-4" /> Upload
-                                        </Button>
-                                        <input type="file" id="photo-upload" accept="image/*" onChange={handleFileChange} className="hidden" />
+                                        {!photoURL ? (
+                                        <>
+                                            <Button type="button" variant="outline" size="sm" onClick={() => document.getElementById('photo-upload')?.click()}>
+                                                <Upload className="mr-2 h-4 w-4" /> Upload
+                                            </Button>
+                                            <input type="file" id="photo-upload" accept="image/*" onChange={handleFileChange} className="hidden" />
 
-                                        <Button type="button" variant="outline" size="sm" onClick={() => setCameraMode(true)}>
-                                            <Camera className="mr-2 h-4 w-4" /> Camera
-                                        </Button>
-                                        {photoURL && (
+                                            <Button type="button" variant="outline" size="sm" onClick={() => setCameraMode(true)}>
+                                                <Camera className="mr-2 h-4 w-4" /> Camera
+                                            </Button>
+                                        </>
+                                        ) : (
                                             <Button type="button" variant="destructive" size="sm" onClick={() => setPhotoURL(null)}>
                                                 <Trash2 className="mr-2 h-4 w-4" /> Remove
                                             </Button>
@@ -531,3 +534,7 @@ export default function SettingsPage() {
     </div>
   );
 }
+
+    
+
+    

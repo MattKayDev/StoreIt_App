@@ -374,9 +374,9 @@ export default function Dashboard() {
           </div>
            <Dialog open={isCreateItemOpen} onOpenChange={setCreateItemOpen}>
             <DialogTrigger asChild>
-              <Button size="sm" className="gap-1">
+              <Button size="sm" className="relative md:w-auto w-9 p-0 md:px-3 md:py-2">
                 <PlusCircle className="h-4 w-4" />
-                Add Item
+                <span className="hidden md:inline md:ml-2">Add Item</span>
               </Button>
             </DialogTrigger>
             <ItemDialogContent 
@@ -787,3 +787,7 @@ function MoveItemDialogContent({ item, onMove, locations }: { item: Item | null,
         </DialogContent>
     );
 }
+
+    
+
+    
