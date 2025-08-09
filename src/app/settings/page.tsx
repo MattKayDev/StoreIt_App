@@ -392,8 +392,8 @@ export default function SettingsPage() {
             </DropdownMenuContent>
           </DropdownMenu>
         </header>
-        <main className="flex flex-1 flex-col gap-4 p-2 md:gap-8 md:p-8">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                  <Card>
                     <CardHeader>
                         <CardTitle>Manage Sharing</CardTitle>
@@ -534,5 +534,7 @@ export default function SettingsPage() {
     </div>
   );
 }
+
+    
 
     
